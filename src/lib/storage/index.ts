@@ -5,6 +5,10 @@ function getDriver(): StorageDriver {
     const { s3Driver } = require('./s3')
     return s3Driver
   }
+  if (process.env.STORAGE_DRIVER === 'vercelblob') {
+    const { vercelBlobDriver } = require('./vercelblob')
+    return vercelBlobDriver
+  }
   const { localDriver } = require('./local')
   return localDriver
 }
