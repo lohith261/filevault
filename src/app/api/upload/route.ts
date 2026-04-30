@@ -20,7 +20,9 @@ export const maxDuration = 60
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth()
+    const authObj = await auth()
+    const { userId } = authObj
+    const isPro = authObj.has({ plan: 'user:pro' })
 
     const formData = await req.formData()
     const file = formData.get('file') as File | null
@@ -33,11 +35,11 @@ export async function POST(req: NextRequest) {
     }
 
     const isAnon = !userId
-    const maxSize = isAnon ? ANON_MAX_SIZE : MAX_UPLOAD_SIZE
+    const maxSize = isPro ? MAX_UPLOAD_SIZE : ANON_MAX_SIZE
 
     if (file.size > maxSize) {
       return NextResponse.json(
-        { error: `File too large. Max size is ${isAnon ? '10MB' : '50MB'}.` },
+        { error: `File too large. Max size is ${isPro ? '50MB' : '10MB'}. ${!isPro ? 'Upgrade to Pro for 50MB uploads.' : ''}`.trim() },
         { status: 413 }
       )
     }
@@ -46,12 +48,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid expiry option.' }, { status: 400 })
     }
 
-    // Enforce anon expiry limits
+    // Free/anon users: cap expiry at 24h
     let finalExpiry = expiry as ExpiryOption
-    if (isAnon && finalExpiry === 'never') {
-      finalExpiry = '24h'
-    }
-    if (isAnon && finalExpiry === '30d') {
+    if (!isPro && (finalExpiry === 'never' || finalExpiry === '30d' || finalExpiry === '7d')) {
       finalExpiry = '24h'
     }
 

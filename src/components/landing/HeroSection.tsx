@@ -36,7 +36,8 @@ function RotatingWord() {
 }
 
 export function HeroSection() {
-  const { isSignedIn } = useAuth()
+  const { isSignedIn, has } = useAuth()
+  const isPro = isSignedIn ? (has?.({ plan: 'user:pro' }) ?? false) : false
   const { state, upload, reset } = useUpload()
   const [expiry, setExpiry] = useState('24h')
   const [password, setPassword] = useState('')
@@ -114,7 +115,7 @@ export function HeroSection() {
                   disabled={false}
                 />
 
-                <ExpiryPicker value={expiry} onChange={setExpiry} isLoggedIn={isSignedIn ?? false} />
+                <ExpiryPicker value={expiry} onChange={setExpiry} isPro={isPro} />
 
                 {/* Advanced options */}
                 <button
@@ -176,7 +177,7 @@ export function HeroSection() {
           transition={{ delay: 0.4 }}
           className="mt-4 text-center text-xs text-[var(--muted-foreground)]"
         >
-          50MB max · ZIP or HTML · No account required
+          {isPro ? '50MB max' : '10MB max (free) · 50MB with Pro'} · ZIP or HTML · No account required
         </motion.p>
       </div>
     </section>

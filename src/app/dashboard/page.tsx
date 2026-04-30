@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
+import { useAuth } from '@clerk/nextjs'
 import { FileGrid } from '@/components/dashboard/FileGrid'
 import { StatsBar } from '@/components/dashboard/StatsBar'
 import { Input } from '@/components/ui/Input'
@@ -10,11 +12,28 @@ export default function DashboardPage() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const { sites, total, isLoading, deleteFile, renameFile } = useFiles(page, search)
+  const { has } = useAuth()
+  const isPro = has?.({ plan: 'user:pro' }) ?? false
 
   const totalPages = Math.ceil(total / 20)
 
   return (
     <div className="mx-auto max-w-6xl px-4 pt-24 pb-16">
+      {!isPro && (
+        <Link href="/pricing" className="mb-6 flex items-center justify-between gap-3 rounded-xl border border-[var(--primary)]/30 bg-[var(--primary)]/5 px-4 py-3 hover:bg-[var(--primary)]/10 transition-colors">
+          <div className="flex items-center gap-3">
+            <span className="text-lg">✦</span>
+            <div>
+              <p className="text-sm font-semibold text-[var(--foreground)]">Upgrade to Pro</p>
+              <p className="text-xs text-[var(--muted-foreground)]">50MB uploads · longer expiry · more power</p>
+            </div>
+          </div>
+          <span className="shrink-0 rounded-lg bg-[var(--primary)] px-3 py-1.5 text-xs font-semibold text-white">
+            See plans →
+          </span>
+        </Link>
+      )}
+
       <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
         <h1 className="text-2xl font-bold text-[var(--foreground)]">My deployments</h1>
         <div className="w-full sm:w-72">

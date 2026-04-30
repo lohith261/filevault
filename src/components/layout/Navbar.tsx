@@ -5,11 +5,13 @@ import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
 import { useAuth, UserButton, SignInButton } from '@clerk/nextjs'
 import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
 
 export function Navbar() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
-  const { isSignedIn } = useAuth()
+  const { isSignedIn, has } = useAuth()
+  const isPro = isSignedIn ? (has?.({ plan: 'user:pro' }) ?? false) : false
 
   useEffect(() => setMounted(true), [])
 
@@ -44,11 +46,18 @@ export function Navbar() {
             </button>
           )}
 
+          <Link href="/pricing">
+            <Button variant="ghost" size="sm">Pricing</Button>
+          </Link>
+
           {isSignedIn ? (
             <>
               <Link href="/dashboard">
                 <Button variant="ghost" size="sm">Dashboard</Button>
               </Link>
+              {isPro && (
+                <Badge variant="success" className="hidden sm:inline-flex">Pro</Badge>
+              )}
               <UserButton />
             </>
           ) : (
