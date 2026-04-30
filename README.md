@@ -20,7 +20,7 @@
 - **Analytics** — view count per deployment
 - **QR codes** — one-click QR code for every hosted URL
 - **Dark / light mode** — system-aware with manual toggle
-- **Storage backends** — local filesystem (dev) or AWS S3 (prod)
+- **Storage backends** — local filesystem (dev) or Vercel Blob (prod)
 
 ## Tech Stack
 
@@ -31,7 +31,7 @@
 | Animations | Framer Motion |
 | Auth | Clerk v7 |
 | Database | PostgreSQL via Prisma 7 + `@prisma/adapter-pg` |
-| Storage | Local FS (dev) / AWS S3 (prod) |
+| Storage | Local FS (dev) / Vercel Blob (prod) |
 | ZIP extraction | JSZip (pure JS, serverless-safe) |
 | Password hashing | bcryptjs (pure JS, serverless-safe) |
 
@@ -77,17 +77,14 @@ Open [http://localhost:3000](http://localhost:3000).
 |---|---|---|
 | `DATABASE_URL` | ✓ | PostgreSQL connection string (PgBouncer pooled) |
 | `DIRECT_URL` | ✓ | PostgreSQL direct connection (used for migrations) |
-| `STORAGE_DRIVER` | ✓ | `local` or `s3` |
+| `STORAGE_DRIVER` | ✓ | `local` (dev) or `vercelblob` (prod) |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | ✓ | Clerk publishable key |
 | `CLERK_SECRET_KEY` | ✓ | Clerk secret key |
 | `NEXT_PUBLIC_BASE_URL` | ✓ | Your public URL (e.g. `https://filevault.host`) |
 | `CRON_SECRET` | ✓ | Secret for the cleanup cron job |
 | `ANON_MAX_SIZE_MB` | — | Max upload size for anonymous users (default: `10`) |
 | `ANON_MAX_EXPIRY_HOURS` | — | Max expiry for anonymous users (default: `24`) |
-| `AWS_ACCESS_KEY_ID` | S3 only | AWS credentials |
-| `AWS_SECRET_ACCESS_KEY` | S3 only | AWS credentials |
-| `AWS_REGION` | S3 only | e.g. `us-east-1` |
-| `S3_BUCKET_NAME` | S3 only | Private S3 bucket name |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob only | Auto-set when you connect a Blob store in the Vercel dashboard |
 
 ## Project Structure
 
@@ -128,7 +125,7 @@ src/
 3. Add all environment variables in the Vercel dashboard
 4. The cleanup cron runs every 6 hours automatically via `vercel.json`
 
-For production, set `STORAGE_DRIVER=s3` and provide the AWS credentials.
+For production, set `STORAGE_DRIVER=vercelblob`. The `BLOB_READ_WRITE_TOKEN` is auto-injected when you connect a Vercel Blob store to the project.
 
 ## License
 

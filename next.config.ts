@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['@aws-sdk/client-s3', '@aws-sdk/s3-request-presigner', 'jszip', 'bcryptjs', 'pg', '@prisma/adapter-pg'],
+  serverExternalPackages: ['jszip', 'bcryptjs', 'pg', '@prisma/adapter-pg'],
   async headers() {
     return [
       {
