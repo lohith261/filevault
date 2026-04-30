@@ -95,8 +95,16 @@ export async function GET(req: NextRequest, { params }: Params) {
     return new NextResponse('File not found', { status: 404 })
   }
 
-  const stream = await storageDriver.getFileStream(siteFile.storageKey)
+  // Public CDN URL (Vercel Blob) — redirect so the browser fetches directly from
+  // the CDN edge without going through a serverless function on every request.
+  // Password-protected sites never reach this branch (caught above), so the
+  // redirect target is always the already-authenticated blob URL.
+  if (siteFile.storageKey.startsWith('https://')) {
+    return NextResponse.redirect(siteFile.storageKey, { status: 302 })
+  }
 
+  // Local dev: stream from filesystem
+  const stream = await storageDriver.getFileStream(siteFile.storageKey)
   return new NextResponse(stream, {
     headers: {
       'Content-Type': siteFile.mimeType,
