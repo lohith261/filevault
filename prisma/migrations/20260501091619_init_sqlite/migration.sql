@@ -1,42 +1,38 @@
 -- CreateTable
 CREATE TABLE "sites" (
-    "id" TEXT NOT NULL,
-    "slug" VARCHAR(6) NOT NULL,
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "slug" TEXT NOT NULL,
     "label" TEXT NOT NULL DEFAULT '',
     "userId" TEXT,
     "passwordHash" TEXT,
-    "expiresAt" TIMESTAMP(3),
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "expiresAt" DATETIME,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
     "totalSizeBytes" BIGINT NOT NULL DEFAULT 0,
     "entryFile" TEXT NOT NULL DEFAULT 'index.html',
-    "storagePrefix" TEXT NOT NULL,
-
-    CONSTRAINT "sites_pkey" PRIMARY KEY ("id")
+    "storagePrefix" TEXT NOT NULL
 );
 
 -- CreateTable
 CREATE TABLE "site_files" (
-    "id" TEXT NOT NULL,
+    "id" TEXT NOT NULL PRIMARY KEY,
     "siteId" TEXT NOT NULL,
     "path" TEXT NOT NULL,
     "mimeType" TEXT NOT NULL,
     "sizeBytes" INTEGER NOT NULL,
     "storageKey" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "site_files_pkey" PRIMARY KEY ("id")
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "site_files_siteId_fkey" FOREIGN KEY ("siteId") REFERENCES "sites" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateTable
 CREATE TABLE "site_views" (
-    "id" TEXT NOT NULL,
+    "id" TEXT NOT NULL PRIMARY KEY,
     "siteId" TEXT NOT NULL,
     "ip" TEXT,
     "userAgent" TEXT,
-    "viewedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "site_views_pkey" PRIMARY KEY ("id")
+    "viewedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "site_views_siteId_fkey" FOREIGN KEY ("siteId") REFERENCES "sites" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateIndex
@@ -62,9 +58,3 @@ CREATE INDEX "site_views_siteId_idx" ON "site_views"("siteId");
 
 -- CreateIndex
 CREATE INDEX "site_views_siteId_viewedAt_idx" ON "site_views"("siteId", "viewedAt");
-
--- AddForeignKey
-ALTER TABLE "site_files" ADD CONSTRAINT "site_files_siteId_fkey" FOREIGN KEY ("siteId") REFERENCES "sites"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "site_views" ADD CONSTRAINT "site_views_siteId_fkey" FOREIGN KEY ("siteId") REFERENCES "sites"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -3,12 +3,12 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
 }
 
 model Site {
   id             String     @id @default(cuid())
-  slug           String     @unique @db.VarChar(6)
+  slug           String     @unique
   label          String     @default("")
   userId         String?
   passwordHash   String?

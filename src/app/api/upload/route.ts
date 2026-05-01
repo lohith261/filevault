@@ -20,9 +20,15 @@ export const maxDuration = 60
 
 export async function POST(req: NextRequest) {
   try {
-    const authObj = await auth()
-    const { userId } = authObj
-    const isPro = authObj.has({ plan: 'user:pro' })
+    let userId: string | null = null
+    let isPro = false
+    try {
+      const authObj = await auth()
+      userId = authObj.userId ?? null
+      isPro = userId ? (authObj.has?.({ plan: 'user:pro' }) ?? false) : false
+    } catch {
+      // Clerk not configured — anonymous mode
+    }
 
     const formData = await req.formData()
     const file = formData.get('file') as File | null

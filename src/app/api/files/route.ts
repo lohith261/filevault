@@ -3,9 +3,16 @@ import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 
 export async function GET(req: NextRequest) {
-  const { userId } = await auth()
+  let userId: string | null = null
+  try {
+    const { userId: uid } = await auth()
+    userId = uid ?? null
+  } catch {
+    // Clerk not configured — anonymous mode
+  }
+
   if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ sites: [], total: 0, page: 1, pageSize: 20 })
   }
 
   const { searchParams } = new URL(req.url)
@@ -15,7 +22,7 @@ export async function GET(req: NextRequest) {
 
   const where = {
     userId,
-    ...(search ? { label: { contains: search, mode: 'insensitive' as const } } : {}),
+    ...(search ? { label: { contains: search } } : {}),
   }
 
   const [sites, total] = await Promise.all([

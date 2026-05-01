@@ -7,6 +7,15 @@ import { UpdateSiteSchema } from '@/lib/validations'
 
 type Params = { params: Promise<{ slug: string }> }
 
+async function getUserId(): Promise<string | null> {
+  try {
+    const { userId } = await auth()
+    return userId ?? null
+  } catch {
+    return null
+  }
+}
+
 async function getOwnedSite(userId: string, slug: string) {
   const site = await prisma.site.findUnique({ where: { slug } })
   if (!site || site.userId !== userId) return null
@@ -14,7 +23,7 @@ async function getOwnedSite(userId: string, slug: string) {
 }
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
-  const { userId } = await auth()
+  const userId = await getUserId()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { slug } = await params
@@ -28,7 +37,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 }
 
 export async function PATCH(req: NextRequest, { params }: Params) {
-  const { userId } = await auth()
+  const userId = await getUserId()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { slug } = await params

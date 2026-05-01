@@ -7,10 +7,22 @@ import { useAuth, UserButton, SignInButton } from '@clerk/nextjs'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 
+const CLERK_CONFIGURED = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+
+function useSafeAuth() {
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const { isSignedIn, has } = useAuth()
+    return { isSignedIn: isSignedIn ?? false, has }
+  } catch {
+    return { isSignedIn: false, has: undefined }
+  }
+}
+
 export function Navbar() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
-  const { isSignedIn, has } = useAuth()
+  const { isSignedIn, has } = useSafeAuth()
   const isPro = isSignedIn ? (has?.({ plan: 'user:pro' }) ?? false) : false
 
   useEffect(() => setMounted(true), [])
@@ -60,11 +72,11 @@ export function Navbar() {
               )}
               <UserButton />
             </>
-          ) : (
+          ) : CLERK_CONFIGURED ? (
             <SignInButton mode="modal">
               <Button variant="outline" size="sm">Sign in</Button>
             </SignInButton>
-          )}
+          ) : null}
         </nav>
       </div>
     </header>

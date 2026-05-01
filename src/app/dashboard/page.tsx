@@ -8,11 +8,21 @@ import { StatsBar } from '@/components/dashboard/StatsBar'
 import { Input } from '@/components/ui/Input'
 import { useFiles } from '@/hooks/useFiles'
 
+function useSafeAuth() {
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const { has } = useAuth()
+    return { has }
+  } catch {
+    return { has: undefined }
+  }
+}
+
 export default function DashboardPage() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const { sites, total, isLoading, deleteFile, renameFile } = useFiles(page, search)
-  const { has } = useAuth()
+  const { has } = useSafeAuth()
   const isPro = has?.({ plan: 'user:pro' }) ?? false
 
   const totalPages = Math.ceil(total / 20)

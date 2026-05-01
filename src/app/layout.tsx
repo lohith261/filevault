@@ -26,18 +26,19 @@ export const metadata: Metadata = {
   },
 }
 
+const CLERK_CONFIGURED = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <ClerkProvider>
-      <html lang="en" className={`${geistSans.variable} ${geistMono.variable} antialiased`} suppressHydrationWarning>
-        <body className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)]">
-          <ThemeProvider>
-            <Navbar />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </ThemeProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+  const inner = (
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} antialiased`} suppressHydrationWarning>
+      <body className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)]">
+        <ThemeProvider>
+          <Navbar />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </ThemeProvider>
+      </body>
+    </html>
   )
+  return CLERK_CONFIGURED ? <ClerkProvider>{inner}</ClerkProvider> : inner
 }

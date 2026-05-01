@@ -82,15 +82,20 @@ export function FeaturesSection() {
               key={feature.title}
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
+              whileHover={{ y: -4, transition: { duration: 0.15 } }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.05 }}
-              className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 hover:border-[var(--muted-foreground)] transition-colors"
+              className="group relative overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 hover:border-[var(--primary)]/30 hover:shadow-lg hover:shadow-[var(--primary)]/5 transition-all duration-200"
             >
-              <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--primary)]/10 text-[var(--primary)]">
-                {feature.icon}
+              {/* Hover gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-br from-[var(--primary)]/3 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+              <div className="relative">
+                <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--primary)]/20 to-[var(--primary)]/5 text-[var(--primary)]">
+                  {feature.icon}
+                </div>
+                <h3 className="font-semibold text-[var(--foreground)] mb-1">{feature.title}</h3>
+                <p className="text-sm text-[var(--muted-foreground)] leading-relaxed">{feature.description}</p>
               </div>
-              <h3 className="font-semibold text-[var(--foreground)] mb-1">{feature.title}</h3>
-              <p className="text-sm text-[var(--muted-foreground)] leading-relaxed">{feature.description}</p>
             </motion.div>
           ))}
         </div>

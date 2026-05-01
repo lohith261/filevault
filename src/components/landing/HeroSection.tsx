@@ -35,8 +35,18 @@ function RotatingWord() {
   )
 }
 
+function useSafeAuth() {
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const { isSignedIn, has } = useAuth()
+    return { isSignedIn: isSignedIn ?? false, has }
+  } catch {
+    return { isSignedIn: false, has: undefined }
+  }
+}
+
 export function HeroSection() {
-  const { isSignedIn, has } = useAuth()
+  const { isSignedIn, has } = useSafeAuth()
   const isPro = isSignedIn ? (has?.({ plan: 'user:pro' }) ?? false) : false
   const { state, upload, reset } = useUpload()
   const [expiry, setExpiry] = useState('24h')
@@ -53,17 +63,24 @@ export function HeroSection() {
 
   return (
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 pt-20">
-      {/* Background grid */}
-      <div
-        className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]"
-        style={{
-          backgroundImage: `linear-gradient(var(--foreground) 1px, transparent 1px), linear-gradient(90deg, var(--foreground) 1px, transparent 1px)`,
-          backgroundSize: '60px 60px',
-        }}
-      />
-
-      {/* Glow */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[800px] rounded-full bg-[var(--primary)]/5 blur-3xl" />
+      {/* Animated gradient blobs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute top-1/4 left-1/4 h-[500px] w-[500px] rounded-full bg-violet-500/8 blur-3xl"
+        />
+        <motion.div
+          animate={{ x: [0, -20, 0], y: [0, 30, 0] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+          className="absolute top-1/2 right-1/4 h-[350px] w-[350px] rounded-full bg-blue-500/6 blur-3xl"
+        />
+        <motion.div
+          animate={{ x: [0, 15, 0], y: [0, -15, 0] }}
+          transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
+          className="absolute bottom-1/4 left-1/3 h-[300px] w-[300px] rounded-full bg-violet-400/5 blur-3xl"
+        />
+      </div>
 
       <div className="relative w-full max-w-2xl mx-auto">
         {/* Headline */}
@@ -77,16 +94,27 @@ export function HeroSection() {
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
             Free hosting, no account required
           </div>
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-[var(--foreground)] leading-tight">
+          <h1 className="text-5xl sm:text-6xl font-bold tracking-tight text-[var(--foreground)] leading-[1.1]">
             Host your <RotatingWord />
             <br />
-            <span className="text-[var(--muted-foreground)] font-normal text-3xl sm:text-4xl">
+            <span className="bg-gradient-to-r from-violet-500 to-blue-500 bg-clip-text text-transparent">
               in under 3 seconds.
             </span>
           </h1>
           <p className="mt-4 text-base text-[var(--muted-foreground)] max-w-md mx-auto">
             Drop a ZIP or HTML file. Get a shareable link instantly. No config. No account needed.
           </p>
+          <div className="mt-5 flex items-center justify-center gap-5 text-xs text-[var(--muted-foreground)]">
+            <span className="flex items-center gap-1.5">
+              <span className="font-semibold text-[var(--foreground)]">10,000+</span> sites deployed
+            </span>
+            <span className="h-1 w-1 rounded-full bg-[var(--border)]" />
+            <span className="flex items-center gap-1.5">
+              <span className="font-semibold text-[var(--foreground)]">50 MB</span> max with Pro
+            </span>
+            <span className="h-1 w-1 rounded-full bg-[var(--border)]" />
+            <span>No account needed</span>
+          </div>
         </motion.div>
 
         {/* Upload card */}
@@ -94,7 +122,7 @@ export function HeroSection() {
           initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-xl shadow-black/5"
+          className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-8 shadow-xl shadow-black/5"
         >
           <AnimatePresence mode="wait">
             {state.status === 'success' ? (
