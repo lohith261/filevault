@@ -9,12 +9,15 @@ import { QRCodeDisplay } from '@/components/shared/QRCodeDisplay'
 import { Dialog } from '@/components/ui/Dialog'
 import { Input } from '@/components/ui/Input'
 import { formatBytes, formatRelativeTime } from '@/lib/utils'
+import { DropZone } from '@/components/upload/DropZone'
+import { getLimits, getTier } from '@/lib/limits'
 import type { SiteRecord } from '@/hooks/useFiles'
 
 interface FileCardProps {
   site: SiteRecord
   onDelete: (slug: string) => void
   onRename: (slug: string, label: string) => void
+  onUpdate: (slug: string, file: File) => Promise<void>
 }
 
 function getExpiryStatus(expiresAt: string | null): {
@@ -28,12 +31,17 @@ function getExpiryStatus(expiresAt: string | null): {
   return { badge: 'success', label: `Expires ${formatRelativeTime(expiresAt)}` }
 }
 
-export function FileCard({ site, onDelete, onRename }: FileCardProps) {
+export function FileCard({ site, onDelete, onRename, onUpdate }: FileCardProps) {
   const [showDelete, setShowDelete] = useState(false)
   const [showRename, setShowRename] = useState(false)
+  const [showUpdate, setShowUpdate] = useState(false)
   const [renameLabel, setRenameLabel] = useState(site.label || site.slug)
   const [deleting, setDeleting] = useState(false)
   const [renaming, setRenaming] = useState(false)
+  const [updating, setUpdating] = useState(false)
+  const [updateError, setUpdateError] = useState<string | null>(null)
+
+  const limits = getLimits(getTier('signed-in', false))
 
   const expiry = getExpiryStatus(site.expiresAt)
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
@@ -52,6 +60,19 @@ export function FileCard({ site, onDelete, onRename }: FileCardProps) {
     await onRename(site.slug, renameLabel)
     setShowRename(false)
     setRenaming(false)
+  }
+
+  const handleUpdate = async (file: File) => {
+    setUpdating(true)
+    setUpdateError(null)
+    try {
+      await onUpdate(site.slug, file)
+      setShowUpdate(false)
+    } catch (err) {
+      setUpdateError(err instanceof Error ? err.message : 'Update failed.')
+    } finally {
+      setUpdating(false)
+    }
   }
 
   return (
@@ -120,6 +141,11 @@ export function FileCard({ site, onDelete, onRename }: FileCardProps) {
               Visit
             </Button>
           </a>
+          <Button variant="ghost" size="sm" onClick={() => { setShowUpdate(true); setUpdateError(null) }} title="Update files">
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+          </Button>
           <Button variant="ghost" size="sm" onClick={() => setShowRename(true)}>
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -158,6 +184,39 @@ export function FileCard({ site, onDelete, onRename }: FileCardProps) {
           <Button variant="secondary" onClick={() => setShowRename(false)}>Cancel</Button>
           <Button onClick={handleRename} loading={renaming}>Save</Button>
         </div>
+      </Dialog>
+
+      {/* Update dialog */}
+      <Dialog
+        open={showUpdate}
+        onClose={() => { if (!updating) setShowUpdate(false) }}
+        title="Update deployment"
+      >
+        <p className="mb-4 text-sm text-[var(--muted-foreground)]">
+          Drop a new file to replace <strong className="text-[var(--foreground)]">{displayName}</strong>.
+          The URL stays the same — only the files change.
+        </p>
+        {updating ? (
+          <div className="flex flex-col items-center gap-3 py-8">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--border)] border-t-[var(--primary)]" />
+            <p className="text-sm text-[var(--muted-foreground)]">Updating…</p>
+          </div>
+        ) : (
+          <DropZone
+            onFileSelected={handleUpdate}
+            onReject={(msg) => setUpdateError(msg)}
+            disabled={false}
+            maxBytes={limits.maxBytes}
+          />
+        )}
+        {updateError && (
+          <p className="mt-2 text-center text-sm text-[var(--destructive)]">{updateError}</p>
+        )}
+        {!updating && (
+          <div className="mt-4 flex justify-end">
+            <Button variant="secondary" size="sm" onClick={() => setShowUpdate(false)}>Cancel</Button>
+          </div>
+        )}
       </Dialog>
     </>
   )

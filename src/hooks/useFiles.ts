@@ -65,6 +65,20 @@ export function useFiles(page = 1, search = '') {
     [mutate]
   )
 
+  const updateFile = useCallback(
+    async (slug: string, file: File): Promise<void> => {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch(`/api/files/${slug}`, { method: 'PUT', body: formData })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error ?? 'Update failed.')
+      }
+      await mutate()
+    },
+    [mutate]
+  )
+
   return {
     sites: data?.sites ?? [],
     total: data?.total ?? 0,
@@ -73,5 +87,6 @@ export function useFiles(page = 1, search = '') {
     mutate,
     deleteFile,
     renameFile,
+    updateFile,
   }
 }
