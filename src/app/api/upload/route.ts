@@ -6,14 +6,8 @@ import { storageDriver } from '@/lib/storage'
 import { generateSlug } from '@/lib/slug'
 import { hashPassword } from '@/lib/hash'
 import { prisma } from '@/lib/prisma'
-import {
-  expiryToDate,
-  EXPIRY_OPTIONS,
-  type ExpiryOption,
-  MAX_UPLOAD_SIZE,
-  ANON_MAX_SIZE,
-  ANON_MAX_EXPIRY_HOURS,
-} from '@/lib/validations'
+import { expiryToDate, EXPIRY_OPTIONS, type ExpiryOption } from '@/lib/validations'
+import { getTier, getLimits, capExpiry } from '@/lib/limits'
 import type { ExtractedFile } from '@/lib/unzip'
 
 export const maxDuration = 60
@@ -40,25 +34,65 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No file provided.' }, { status: 400 })
     }
 
-    const isAnon = !userId
-    const maxSize = isPro ? MAX_UPLOAD_SIZE : ANON_MAX_SIZE
+    const tier = getTier(userId, isPro)
+    const limits = getLimits(tier)
 
-    if (file.size > maxSize) {
+    // File size check
+    if (file.size > limits.maxBytes) {
+      const mb = Math.round(limits.maxBytes / 1024 / 1024)
+      const upgrade = tier === 'anon'
+        ? ' Sign in for a higher limit.'
+        : tier === 'free'
+        ? ' Upgrade to Pro for 100 MB.'
+        : ''
       return NextResponse.json(
-        { error: `File too large. Max size is ${isPro ? '50MB' : '10MB'}. ${!isPro ? 'Upgrade to Pro for 50MB uploads.' : ''}`.trim() },
+        { error: `File too large. ${mb} MB max for your plan.${upgrade}` },
         { status: 413 }
       )
+    }
+
+    // Password check
+    if (password && !limits.passwordAllowed) {
+      return NextResponse.json(
+        { error: 'Password protection requires a free account.' },
+        { status: 403 }
+      )
+    }
+
+    // Anonymous daily IP limit
+    if (tier === 'anon' && limits.dailyAnonLimit !== null) {
+      const ip =
+        req.headers.get('x-forwarded-for')?.split(',')[0].trim() ??
+        req.headers.get('x-real-ip') ??
+        'unknown'
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000)
+      const count = await prisma.anonUploadLog.count({
+        where: { ip, createdAt: { gte: since } },
+      })
+      if (count >= limits.dailyAnonLimit) {
+        return NextResponse.json(
+          { error: `Anonymous upload limit reached (${limits.dailyAnonLimit} per day). Sign in for more.` },
+          { status: 429 }
+        )
+      }
+    }
+
+    // Free tier link count limit
+    if (tier === 'free' && limits.maxLinks !== null && userId) {
+      const linkCount = await prisma.site.count({ where: { userId } })
+      if (linkCount >= limits.maxLinks) {
+        return NextResponse.json(
+          { error: `You've reached the ${limits.maxLinks}-link limit on the free plan. Upgrade to Pro for unlimited links.` },
+          { status: 403 }
+        )
+      }
     }
 
     if (!EXPIRY_OPTIONS.includes(expiry as ExpiryOption)) {
       return NextResponse.json({ error: 'Invalid expiry option.' }, { status: 400 })
     }
 
-    // Free/anon users: cap expiry at 24h
-    let finalExpiry = expiry as ExpiryOption
-    if (!isPro && (finalExpiry === 'never' || finalExpiry === '30d' || finalExpiry === '7d')) {
-      finalExpiry = '24h'
-    }
+    const finalExpiry = capExpiry(expiry as ExpiryOption, limits.maxExpiryOption)
 
     const buffer = Buffer.from(await file.arrayBuffer())
     let extractedFiles: ExtractedFile[]
@@ -114,6 +148,15 @@ export async function POST(req: NextRequest) {
           storageKey: `${storagePrefix}/${f.path}`,
         })),
       })
+
+      // Log anonymous uploads for daily rate limiting
+      if (tier === 'anon') {
+        const ip =
+          req.headers.get('x-forwarded-for')?.split(',')[0].trim() ??
+          req.headers.get('x-real-ip') ??
+          'unknown'
+        await tx.anonUploadLog.create({ data: { ip } })
+      }
     })
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? ''

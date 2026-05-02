@@ -33,6 +33,5 @@ export const ALLOWED_SINGLE_MIME_TYPES = new Set([
   'application/json',
 ])
 
-export const MAX_UPLOAD_SIZE = 50 * 1024 * 1024
-export const ANON_MAX_SIZE = Number(process.env.ANON_MAX_SIZE_MB ?? 10) * 1024 * 1024
-export const ANON_MAX_EXPIRY_HOURS = Number(process.env.ANON_MAX_EXPIRY_HOURS ?? 24)
+// Max upload size for Pro tier (hard ceiling used by multipart middleware)
+export const MAX_UPLOAD_SIZE = 100 * 1024 * 1024

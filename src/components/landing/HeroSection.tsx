@@ -9,6 +9,7 @@ import { UploadSuccess } from '@/components/upload/UploadSuccess'
 import { ExpiryPicker } from '@/components/upload/ExpiryPicker'
 import { Input } from '@/components/ui/Input'
 import { useUpload } from '@/hooks/useUpload'
+import { getTier, getLimits } from '@/lib/limits'
 
 const ROTATING_WORDS = ['HTML sites', 'static apps', 'landing pages', 'portfolios', 'demos']
 
@@ -46,6 +47,8 @@ function useSafeAuth() {
 export function HeroSection() {
   const { isSignedIn, has } = useSafeAuth()
   const isPro = isSignedIn ? (has?.({ plan: 'user:pro' }) ?? false) : false
+  const tier = getTier(isSignedIn ? 'signed-in' : null, isPro)
+  const limits = getLimits(tier)
   const { state, upload, reset } = useUpload()
 
   const [expiry, setExpiry] = useState('24h')
@@ -143,7 +146,7 @@ export function HeroSection() {
                         className="overflow-hidden"
                       >
                         <div className="space-y-4 pt-4">
-                          <ExpiryPicker value={expiry} onChange={setExpiry} isPro={isPro} />
+                          <ExpiryPicker value={expiry} onChange={setExpiry} isPro={isPro} maxExpiry={limits.maxExpiryOption} />
                           <Input
                             type="password"
                             label="Password protection (optional)"
@@ -163,6 +166,7 @@ export function HeroSection() {
                     onFileSelected={handleFileSelected}
                     onReject={(msg) => setUploadError(msg)}
                     disabled={isActive}
+                    maxBytes={limits.maxBytes}
                   />
 
                   {(uploadError || state.status === 'error') && (
@@ -176,7 +180,7 @@ export function HeroSection() {
                   )}
 
                   <p className="mt-3 text-center text-xs text-[var(--muted-foreground)]">
-                    {isPro ? '50 MB max' : '10 MB free · 50 MB with Pro'} · Any file type · No account required
+                    {limits.label} · Any file type
                   </p>
                 </div>
               </motion.div>

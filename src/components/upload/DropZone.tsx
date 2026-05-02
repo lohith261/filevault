@@ -9,9 +9,10 @@ interface DropZoneProps {
   onFileSelected: (file: File) => void
   onReject?: (message: string) => void
   disabled?: boolean
+  maxBytes?: number
 }
 
-export function DropZone({ onFileSelected, onReject, disabled }: DropZoneProps) {
+export function DropZone({ onFileSelected, onReject, disabled, maxBytes = 100 * 1024 * 1024 }: DropZoneProps) {
   const onDrop = useCallback(
     (accepted: File[], rejectedFiles: FileRejection[]) => {
       if (rejectedFiles.length > 0) {
@@ -27,7 +28,7 @@ export function DropZone({ onFileSelected, onReject, disabled }: DropZoneProps) 
 
   const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
     onDrop,
-    maxSize: 50 * 1024 * 1024,
+    maxSize: maxBytes,
     multiple: false,
     disabled,
   })
@@ -116,7 +117,7 @@ export function DropZone({ onFileSelected, onReject, disabled }: DropZoneProps) 
               <span className="rounded-md bg-[var(--muted)] px-2 py-0.5 font-mono text-xs font-medium text-[var(--foreground)]">.html</span>
               <span className="rounded-md bg-[var(--muted)] px-2 py-0.5 font-mono text-xs font-medium text-[var(--foreground)]">.pdf</span>
               <span className="rounded-md bg-[var(--muted)] px-2 py-0.5 font-mono text-xs font-medium text-[var(--foreground)]">.mp4</span>
-              <span className="text-xs text-[var(--muted-foreground)]">+ any file · up to 50 MB</span>
+              <span className="text-xs text-[var(--muted-foreground)]">+ any file type</span>
             </div>
           </motion.div>
         )}

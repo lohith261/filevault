@@ -54,3 +54,12 @@ model SiteView {
   @@index([siteId, viewedAt])
   @@map("site_views")
 }
+
+model AnonUploadLog {
+  id        String   @id @default(cuid())
+  ip        String
+  createdAt DateTime @default(now())
+
+  @@index([ip, createdAt])
+  @@map("anon_upload_logs")
+}

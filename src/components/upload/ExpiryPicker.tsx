@@ -2,22 +2,25 @@
 
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { isExpiryAllowed } from '@/lib/limits'
+import type { ExpiryOption } from '@/lib/validations'
 
-const OPTIONS: { value: string; label: string; requiresPro?: boolean }[] = [
+const OPTIONS: { value: ExpiryOption; label: string }[] = [
   { value: '1h',    label: '1 hour' },
   { value: '24h',   label: '24 hours' },
-  { value: '7d',    label: '7 days',  requiresPro: true },
-  { value: '30d',   label: '30 days', requiresPro: true },
-  { value: 'never', label: 'Never',   requiresPro: true },
+  { value: '7d',    label: '7 days' },
+  { value: '30d',   label: '30 days' },
+  { value: 'never', label: 'Never' },
 ]
 
 interface ExpiryPickerProps {
   value: string
   onChange: (value: string) => void
   isPro?: boolean
+  maxExpiry?: ExpiryOption
 }
 
-export function ExpiryPicker({ value, onChange, isPro = false }: ExpiryPickerProps) {
+export function ExpiryPicker({ value, onChange, isPro = false, maxExpiry = '24h' }: ExpiryPickerProps) {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
@@ -33,7 +36,7 @@ export function ExpiryPicker({ value, onChange, isPro = false }: ExpiryPickerPro
       </div>
       <div className="flex flex-wrap gap-2">
         {OPTIONS.map((opt) => {
-          const locked = opt.requiresPro && !isPro
+          const locked = !isExpiryAllowed(opt.value, maxExpiry)
           return (
             <button
               key={opt.value}
@@ -46,10 +49,10 @@ export function ExpiryPicker({ value, onChange, isPro = false }: ExpiryPickerPro
                   : 'border-[var(--border)] text-[var(--muted-foreground)] hover:border-[var(--muted-foreground)] hover:text-[var(--foreground)]',
                 locked && 'cursor-not-allowed opacity-40'
               )}
-              title={locked ? 'Pro plan required' : undefined}
+              title={locked ? (isPro ? undefined : 'Pro plan required') : undefined}
             >
               {opt.label}
-              {locked && (
+              {locked && !isPro && (
                 <span className="ml-1 text-xs">✦</span>
               )}
             </button>
