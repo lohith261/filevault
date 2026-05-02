@@ -30,7 +30,7 @@ const CLERK_CONFIGURED = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const inner = (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} antialiased`} suppressHydrationWarning>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
       <body className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)]">
         <ThemeProvider>
           <Navbar />

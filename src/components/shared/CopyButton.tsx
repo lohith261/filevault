@@ -19,7 +19,7 @@ export function CopyButton({ text, className, iconOnly = false }: CopyButtonProp
       className={cn(
         'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-150',
         copied
-          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+          ? 'bg-emerald-500/15 text-emerald-600'
           : 'bg-[var(--muted)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)]',
         className
       )}
