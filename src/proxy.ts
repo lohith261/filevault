@@ -5,6 +5,7 @@ const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? 'filevault.host'
 
 const RESERVED_SUBDOMAINS = new Set([
   'www', 'api', 'app', 'admin', 'mail', 'smtp', 'ftp', 'localhost',
+  'dashboard', 'login', 'signup', 'pricing', 'blog', 'help', 's',
 ])
 
 function isValidClerkKey(key: string | undefined): boolean {

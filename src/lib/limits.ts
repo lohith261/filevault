@@ -8,6 +8,7 @@ export interface TierLimits {
   maxExpiryOption: ExpiryOption
   dailyAnonLimit: number | null
   passwordAllowed: boolean
+  customSlugAllowed: boolean
   label: string
 }
 
@@ -18,6 +19,7 @@ const LIMITS: Record<Tier, TierLimits> = {
     maxExpiryOption: '24h',
     dailyAnonLimit: 3,
     passwordAllowed: false,
+    customSlugAllowed: false,
     label: '5 MB max · Sign in for more',
   },
   free: {
@@ -26,6 +28,7 @@ const LIMITS: Record<Tier, TierLimits> = {
     maxExpiryOption: '30d',
     dailyAnonLimit: null,
     passwordAllowed: true,
+    customSlugAllowed: true,
     label: '10 MB max · 10 link limit',
   },
   pro: {
@@ -34,6 +37,7 @@ const LIMITS: Record<Tier, TierLimits> = {
     maxExpiryOption: 'never',
     dailyAnonLimit: null,
     passwordAllowed: true,
+    customSlugAllowed: true,
     label: '100 MB max · Unlimited links',
   },
 }

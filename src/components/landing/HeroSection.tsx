@@ -76,9 +76,6 @@ export function HeroSection() {
   }
 
   const isActive = state.status === 'uploading' || state.status === 'processing'
-  const filename = isActive && 'progress' in state
-    ? undefined
-    : undefined
 
   return (
     <section className="hero-glow relative flex min-h-screen items-center justify-center px-4 pt-16">
@@ -120,7 +117,6 @@ export function HeroSection() {
                 <UploadProgress
                   progress={'progress' in state ? (state as { progress: number }).progress : 92}
                   stage={state.status === 'uploading' ? 'uploading' : 'processing'}
-                  filename={filename}
                 />
               </motion.div>
             ) : (
@@ -168,7 +164,7 @@ export function HeroSection() {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                           />
-                          {isPro ? (
+                          {limits.customSlugAllowed ? (
                             <div className="flex flex-col gap-1.5">
                               <label className="text-sm font-medium text-[var(--muted-foreground)]">
                                 Custom link name <span className="text-xs">(optional)</span>
@@ -191,7 +187,7 @@ export function HeroSection() {
                           ) : (
                             <div className="flex items-center gap-2 rounded-lg border border-dashed border-[var(--border)] px-3 py-2.5">
                               <span className="text-xs text-[var(--muted-foreground)]">Custom link name (e.g. <span className="font-mono">myproject.filevault.host</span>)</span>
-                              <span className="ml-auto rounded-full bg-[var(--primary)]/10 px-2 py-0.5 text-xs font-semibold text-[var(--primary)]">Pro</span>
+                              <span className="ml-auto rounded-full bg-[var(--primary)]/10 px-2 py-0.5 text-xs font-semibold text-[var(--primary)]">Sign in</span>
                             </div>
                           )}
                         </div>

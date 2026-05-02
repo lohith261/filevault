@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { auth } from '@clerk/nextjs/server'
 import { extractZip, detectEntryFile } from '@/lib/unzip'
 import { getMimeType, isBlockedExtension } from '@/lib/mime'
@@ -90,24 +91,17 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Custom slug — Pro only
+    // Custom slug — signed-in users only
     if (customSlug) {
-      if (tier !== 'pro') {
+      if (!limits.customSlugAllowed) {
         return NextResponse.json(
-          { error: 'Custom slugs require a Pro plan.' },
+          { error: 'Custom slugs require a free account. Sign in to use this feature.' },
           { status: 403 }
         )
       }
       const slugError = validateCustomSlug(customSlug)
       if (slugError) {
         return NextResponse.json({ error: slugError }, { status: 400 })
-      }
-      const existing = await prisma.site.findUnique({ where: { slug: customSlug } })
-      if (existing) {
-        return NextResponse.json(
-          { error: `"${customSlug}" is already taken. Try a different name.` },
-          { status: 409 }
-        )
       }
     }
 
@@ -191,6 +185,12 @@ export async function POST(req: NextRequest) {
       totalSizeBytes,
     })
   } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      return NextResponse.json(
+        { error: 'That slug is already taken. Try a different name.' },
+        { status: 409 }
+      )
+    }
     const message = err instanceof Error ? err.message : 'Upload failed.'
     return NextResponse.json({ error: message }, { status: 500 })
   }

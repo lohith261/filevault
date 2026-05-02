@@ -45,3 +45,6 @@ next-env.d.ts
 # local dev file uploads
 /uploads/*
 !/uploads/.gitkeep
+prisma/filevault.db
+prisma/*.db-shm
+prisma/*.db-wal
