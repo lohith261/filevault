@@ -5,7 +5,7 @@ import { Readable } from 'stream'
 import type { FileEntry, StorageDriver } from './types'
 
 function getUploadsDir(): string {
-  return process.env.UPLOADS_PATH ?? path.join(process.cwd(), 'uploads')
+  return process.env.UPLOADS_PATH ?? path.join(/* turbopackIgnore: true */ process.cwd(), 'uploads')
 }
 
 export const localDriver: StorageDriver = {
