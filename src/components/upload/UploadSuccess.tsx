@@ -3,8 +3,10 @@
 import dynamic from 'next/dynamic'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { SignInButton } from '@clerk/nextjs'
 import { Button } from '@/components/ui/Button'
 import { useClipboard } from '@/hooks/useClipboard'
+import { useSafeAuth } from '@/hooks/useSafeAuth'
 import type { UploadResult } from '@/hooks/useUpload'
 import { formatBytes, formatRelativeTime } from '@/lib/utils'
 
@@ -18,9 +20,19 @@ interface UploadSuccessProps {
   onReset: () => void
 }
 
+function Check() {
+  return (
+    <svg className="h-3 w-3 text-[var(--success)]" fill="currentColor" viewBox="0 0 20 20">
+      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+    </svg>
+  )
+}
+
 export function UploadSuccess({ result, onReset }: UploadSuccessProps) {
   const [showShare, setShowShare] = useState(false)
   const { copied, copy } = useClipboard()
+  const { isSignedIn, has } = useSafeAuth()
+  const isPro = isSignedIn ? (has?.({ plan: 'user:pro' }) ?? false) : false
 
   const fullUrl = result.url
 
@@ -60,6 +72,15 @@ export function UploadSuccess({ result, onReset }: UploadSuccessProps) {
         <div>
           <h3 className="text-xl font-bold text-[var(--foreground)]">Your site is live 🚀</h3>
           <p className="mt-0.5 text-xs text-[var(--muted-foreground)]">{meta}</p>
+          {/* Trust strip */}
+          <p className="mt-2 flex items-center justify-center gap-3 text-[10px] text-[var(--muted-foreground)]">
+            <span className="flex items-center gap-1"><Check />Static files only</span>
+            <span className="flex items-center gap-1"><Check />Secure cloud storage</span>
+            <span className="flex items-center gap-1">
+              <Check />
+              {result.expiresAt ? `Auto-deletes ${formatRelativeTime(result.expiresAt)}` : 'Never expires'}
+            </span>
+          </p>
         </div>
       </div>
 
@@ -165,6 +186,35 @@ export function UploadSuccess({ result, onReset }: UploadSuccessProps) {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Dashboard / analytics link */}
+      {isSignedIn ? (
+        <a
+          href="/dashboard"
+          className="block text-center text-xs text-[var(--primary)] hover:underline py-1"
+        >
+          View in dashboard →
+        </a>
+      ) : (
+        <p className="text-center text-xs text-[var(--muted-foreground)] py-1">
+          <SignInButton mode="modal">
+            <button className="text-[var(--primary)] hover:underline">Sign in</button>
+          </SignInButton>
+          {' '}to track views and manage your links
+        </p>
+      )}
+
+      {/* Upgrade nudge — signed-in free users only */}
+      {isSignedIn && !isPro && (
+        <a
+          href="/pricing"
+          className="block rounded-lg border border-[var(--border)] bg-[var(--secondary)] px-4 py-2.5 text-center text-xs text-[var(--muted-foreground)] hover:border-[var(--primary)]/30 hover:text-[var(--foreground)] transition-colors"
+        >
+          <span className="font-semibold text-[var(--foreground)]">Upgrade to Pro</span>
+          {' '}— permanent hosting, 100 MB uploads, custom links
+          <span className="ml-1 text-[var(--primary)]">→</span>
+        </a>
+      )}
 
       <Button variant="ghost" size="sm" onClick={onReset} className="w-full text-[var(--muted-foreground)]">
         Upload another

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAuth } from '@clerk/nextjs'
 import { DropZone } from '@/components/upload/DropZone'
 import { UploadProgress } from '@/components/upload/UploadProgress'
 import { UploadSuccess } from '@/components/upload/UploadSuccess'
@@ -11,6 +10,7 @@ import { Input } from '@/components/ui/Input'
 import { useUpload } from '@/hooks/useUpload'
 import { getTier, getLimits } from '@/lib/limits'
 import { validateCustomSlug } from '@/lib/slug'
+import { useSafeAuth } from '@/hooks/useSafeAuth'
 
 const ROTATING_WORDS = ['HTML sites', 'static apps', 'landing pages', 'portfolios', 'demos']
 
@@ -43,15 +43,6 @@ function RotatingWord() {
   )
 }
 
-function useSafeAuth() {
-  try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const { isSignedIn, has } = useAuth()
-    return { isSignedIn: isSignedIn ?? false, has }
-  } catch {
-    return { isSignedIn: false, has: undefined }
-  }
-}
 
 export function HeroSection() {
   const { isSignedIn, has } = useSafeAuth()

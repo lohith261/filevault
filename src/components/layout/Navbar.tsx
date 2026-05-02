@@ -1,21 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { useAuth, UserButton, SignInButton } from '@clerk/nextjs'
+import { UserButton, SignInButton } from '@clerk/nextjs'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { useSafeAuth } from '@/hooks/useSafeAuth'
 
 const CLERK_CONFIGURED = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-
-function useSafeAuth() {
-  try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const { isSignedIn, has } = useAuth()
-    return { isSignedIn: isSignedIn ?? false, has }
-  } catch {
-    return { isSignedIn: false, has: undefined }
-  }
-}
 
 export function Navbar() {
   const { isSignedIn, has } = useSafeAuth()
