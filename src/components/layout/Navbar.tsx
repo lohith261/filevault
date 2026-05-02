@@ -61,6 +61,9 @@ export function Navbar() {
           <Link href="/pricing">
             <Button variant="ghost" size="sm">Pricing</Button>
           </Link>
+          <Link href="/help">
+            <Button variant="ghost" size="sm">Help</Button>
+          </Link>
 
           {isSignedIn ? (
             <>
