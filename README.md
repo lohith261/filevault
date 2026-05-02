@@ -1,35 +1,36 @@
 # FileVault
 
-> Instant static file hosting — drop a ZIP or HTML file, get a shareable URL in under 3 seconds.
+> Instant static file hosting — drop a ZIP or HTML file, get a shareable URL in seconds.
 
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://www.typescriptlang.org)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38bdf8?logo=tailwindcss)](https://tailwindcss.com)
 [![Prisma](https://img.shields.io/badge/Prisma-7-2d3748?logo=prisma)](https://prisma.io)
-[![SQLite](https://img.shields.io/badge/SQLite-libsql-003b57?logo=sqlite)](https://github.com/tursodatabase/libsql)
 [![Railway](https://img.shields.io/badge/Deploy-Railway-0B0D0E?logo=railway)](https://railway.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**FileVault** is an open-source, production-ready static site hosting platform. Upload a ZIP archive or a single HTML file, and you immediately get a permanent shareable URL. No configuration, no account required for basic use.
+**FileVault** is an open-source static site hosting platform. Upload a ZIP archive or a single HTML file and immediately get a shareable subdomain URL. No configuration, no account required for basic use.
 
-Runs entirely on [Railway](https://railway.app) with SQLite and local filesystem storage — no external database or blob storage service needed.
+Runs on [Railway](https://railway.app) with SQLite and a local filesystem volume — no external database or blob storage required.
+
+→ **[filevault.host](https://filevault.host)**
 
 ---
 
 ## Table of Contents
 
 1. [Features](#features)
-2. [Live Demo](#live-demo)
-3. [Architecture Overview](#architecture-overview)
-4. [Tech Stack](#tech-stack)
-5. [Project Structure](#project-structure)
-6. [Local Development](#local-development)
-7. [Environment Variables](#environment-variables)
+2. [Architecture Overview](#architecture-overview)
+3. [Tech Stack](#tech-stack)
+4. [Project Structure](#project-structure)
+5. [Local Development](#local-development)
+6. [Environment Variables](#environment-variables)
+7. [Tier System](#tier-system)
 8. [API Reference](#api-reference)
 9. [Authentication & Billing](#authentication--billing)
 10. [Security Model](#security-model)
 11. [Deployment to Railway](#deployment-to-railway)
-12. [Clerk Billing Setup](#clerk-billing-setup)
+12. [Custom Domains & Subdomains](#custom-domains--subdomains)
 13. [Cron Jobs](#cron-jobs)
 14. [Database Schema](#database-schema)
 15. [Contributing](#contributing)
@@ -39,46 +40,37 @@ Runs entirely on [Railway](https://railway.app) with SQLite and local filesystem
 
 ## Features
 
-### Core
-
-| Feature | Free | Pro |
-|---|---|---|
-| Upload ZIP or HTML | ✓ | ✓ |
-| Auto-detect entry file | ✓ | ✓ |
-| Shareable `/s/<slug>` URL | ✓ | ✓ |
-| Anonymous uploads (no account) | ✓ | ✓ |
-| Max upload size | 10 MB | 50 MB |
-| Max expiry | 24 hours | Never |
-| Password protection | ✓ | ✓ |
-| View counter | ✓ | ✓ |
-| QR code generation | ✓ | ✓ |
-| Dashboard + file manager | ✓ | ✓ |
-| Rename deployments | ✓ | ✓ |
-| Dark / light mode | ✓ | ✓ |
+| Feature | Anonymous | Free | Pro |
+|---|:---:|:---:|:---:|
+| Upload ZIP or HTML | ✓ | ✓ | ✓ |
+| Auto-detect entry file | ✓ | ✓ | ✓ |
+| Shareable subdomain URL | ✓ | ✓ | ✓ |
+| Max upload size | 5 MB | 10 MB | 100 MB |
+| Link expiry | 24 h | 30 days | Never |
+| Daily upload limit | 3 / IP | — | — |
+| Max active links | — | 10 | Unlimited |
+| Password protection | — | ✓ | ✓ |
+| Custom link name (`name.filevault.host`) | — | ✓ | ✓ |
+| View analytics | — | ✓ | ✓ |
+| QR code | — | ✓ | ✓ |
+| Dashboard | — | ✓ | ✓ |
+| Priority support | — | — | ✓ |
 
 ### Feature Details
 
-**Instant deploy** — The upload pipeline (parse → unzip → store → DB write) runs entirely inside a Next.js API route. Files are written to the local filesystem on a persistent Railway Volume.
+**Instant deploy** — The upload pipeline (parse → unzip → store → DB write) runs in a single Next.js API route. ZIP files are extracted in memory with JSZip. The entry file is detected by looking for `index.html` at the ZIP root, falling back to the first `.html` found.
 
-**ZIP support** — JSZip extracts the archive in memory (no temp-file I/O). Every extracted path is sanitized against directory traversal (`../`). The entry point is detected by searching for `index.html` at the root, or the first `.html` file found.
+**Password protection** — Lock any deployment with a password set at upload time. Passwords are hashed with bcrypt before storage. Visitors see an inline HTML form; on success a `fv_pw_<slug>` httpOnly cookie is set.
 
-**Password protection** — Any deployment can be locked with a password set at upload time. The password is hashed with bcrypt before storage. Visitors see an inline password form served by the same route; on success, a `fv_pw_<slug>` httpOnly cookie is set so they don't have to re-enter it.
+**Custom subdomain routing** — All signed-in users can choose a custom link name (e.g. `myproject`). The site is served at `myproject.filevault.host` via a wildcard DNS record + Next.js middleware rewrite. Custom names are validated server-side (3–30 chars, alphanumeric + hyphens, reserved names blocked).
 
-**Expiry & cleanup** — Expiry dates are stored in the database. A cron job runs daily to delete expired sites (storage + DB records). Anonymous users are limited to 24-hour expiry; Pro users can set 7d, 30d, or never.
+**Expiry & cleanup** — Expiry is stored in the database. A daily cron job deletes expired sites (storage + DB). Anonymous uploads are hard-capped at 24 h; Pro links never expire.
 
-**Dashboard** — Signed-in users see all their deployments in a paginated grid with view counts, creation dates, expiry badges, and quick-actions (copy URL, rename, delete). A search bar filters by label.
+**Anonymous rate limiting** — Anonymous uploads are limited to 3 per day per IP, tracked in the `AnonUploadLog` table.
 
-**Analytics** — Every file request logs a `SiteView` record (deduped by IP + slug + hour). The dashboard shows total views per deployment.
+**Analytics** — Every file request logs a `SiteView` record (deduped by IP + slug + hour). The dashboard shows per-deployment view counts.
 
-**QR codes** — The `qrcode.react` component renders a QR code for every deployment URL.
-
-**Clerk optional** — Clerk auth is an enhancement, not a gate. The app runs fully without Clerk keys — anonymous mode is fully functional.
-
----
-
-## Live Demo
-
-→ **[filevault.host](https://filevault.host)**
+**Clerk optional** — Clerk auth is an enhancement, not a requirement. The entire app works without Clerk keys — anonymous uploads, file serving, and password gates all function without an auth provider.
 
 ---
 
@@ -87,88 +79,73 @@ Runs entirely on [Railway](https://railway.app) with SQLite and local filesystem
 ```
 Browser
   │
+  ├── *.filevault.host  →  proxy.ts rewrites to /s/[slug]
+  │
   ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                     Next.js 16 (Railway)                     │
+│                     Next.js 16 (Railway)                    │
 │                                                             │
-│  POST /api/upload ──► unzip ──► Local FS ──► Prisma DB     │
+│  POST /api/upload  ──► unzip ──► Local FS ──► Prisma DB    │
 │                                                             │
-│  GET /s/[slug]    ──► DB lookup ──► 302 to entryFile       │
+│  GET /s/[slug]     ──► DB lookup ──► redirect to entryFile │
+│      (Server Component, calls notFound() or redirect())     │
 │                                                             │
 │  GET /s/[slug]/[...path]                                    │
 │    ├── DB lookup SiteFile.storageKey                        │
-│    └── stream file from filesystem                          │
+│    ├── Password gate (cookie check + bcrypt verify)         │
+│    └── Stream file from filesystem                          │
 └─────────────────────────────────────────────────────────────┘
           │
           ▼
    SQLite (libsql)          Local filesystem
-   file:/app/uploads/       /app/uploads/<slug>/
-   filevault.db             (Railway Volume)
+   prisma/filevault.db      uploads/<slug>/…
+   (Railway Volume)         (Railway Volume)
 ```
 
-Both the SQLite database file and uploaded files live on the same Railway Volume mounted at `/app/uploads`. A single volume is all that's needed.
+Both the SQLite database and uploaded files live on the same Railway Volume (mounted at `/app/uploads`).
 
-### Storage Driver
+### Middleware (`src/proxy.ts`)
 
-All uploads are written to the local filesystem via `src/lib/storage/local.ts`. The uploads directory is configurable via `UPLOADS_PATH` (defaults to `./uploads` in dev, `/app/uploads` on Railway).
+This Next.js 16 app uses `src/proxy.ts` as the middleware file (not `middleware.ts`). It does two things in order:
 
-```typescript
-interface StorageDriver {
-  putFiles(slug: string, files: FileEntry[]): Promise<string>  // returns storagePrefix
-  getFileStream(storageKey: string): Promise<ReadableStream>
-  deletePrefix(prefix: string): Promise<void>
-}
-```
+1. **Subdomain rewrite** — if the host ends in `.filevault.host` and the subdomain is not reserved, rewrite the request to `/s/<subdomain>` before auth runs.
+2. **Clerk auth** — if Clerk is configured, protect non-public routes.
 
 ### Upload Pipeline
 
 ```
 POST /api/upload (multipart/form-data)
   │
-  ├── Parse: file, expiry, password?, label?
-  ├── Validate: size limit, allowed MIME types, no executable extensions
-  ├── Generate: 6-char nanoid slug (collision-checked against DB)
-  ├── If ZIP: JSZip extract in memory, sanitize paths, detect entryFile
+  ├── Auth: try Clerk, fall back to anonymous
+  ├── Tier: getTier(userId, isPro) → limits
+  ├── Validate: file size, blocked extensions
+  ├── Rate limit: anon IP daily count (AnonUploadLog), free link cap
+  ├── Custom slug: validate format + uniqueness (P2002 on conflict)
+  ├── If ZIP: JSZip extract in memory, sanitize paths, detectEntryFile()
   ├── storageDriver.putFiles(slug, files[])
-  ├── Prisma transaction: Site + SiteFile[] bulk insert
-  └── Return: { slug, url, expiresAt, fileCount }
-```
-
-### Password Gate Flow
-
-```
-GET /s/slug/page.html
-  │
-  ├── DB lookup Site (check passwordHash)
-  ├── If passwordHash present:
-  │     ├── Read cookie fv_pw_slug
-  │     ├── bcrypt.compare(cookieValue, passwordHash)
-  │     ├── If mismatch → return inline HTML password form (no redirect)
-  │     └── If match → proceed
-  └── Stream file from disk
+  ├── Prisma transaction: Site + SiteFile[] + AnonUploadLog (if anon)
+  └── Return: { slug, url, expiresAt, fileCount, totalSizeBytes }
 ```
 
 ---
 
 ## Tech Stack
 
-| Layer | Library | Version | Why |
-|---|---|---|---|
-| Framework | Next.js | 16.x | App Router, server components, API routes |
-| Language | TypeScript | 5.x | Type safety across the full stack |
-| Styling | Tailwind CSS | v4 | CSS-first config, custom properties design tokens |
-| Animations | Framer Motion | 12.x | `AnimatePresence`, animated blobs, hover effects |
-| Auth + Billing | Clerk | 7.x | Optional drop-in auth + subscription billing |
-| Database ORM | Prisma | 7.x | Type-safe client with `@prisma/adapter-libsql` |
-| Database | SQLite (libsql) | — | Self-contained, no external service, Railway Volume |
-| Storage | Local filesystem | — | Railway Volume mount, `UPLOADS_PATH` configurable |
-| ZIP extraction | JSZip | 3.x | Pure JS, runs in serverless without native bindings |
-| Password hashing | bcryptjs | 2.x | Pure JS, no native bindings required |
-| Data fetching | SWR | 2.x | Dashboard file list with optimistic mutations |
-| ID generation | nanoid | 5.x | Cryptographically secure URL-safe slugs |
-| QR codes | qrcode.react | 4.x | Client-side QR generation, no external API |
-| Theme | next-themes | 0.4.x | SSR-safe dark/light mode with system detection |
-| Validation | Zod | 4.x | API request schema validation |
+| Layer | Library | Version |
+|---|---|---|
+| Framework | Next.js | 16.2.x |
+| Language | TypeScript | 5.x |
+| Styling | Tailwind CSS | v4 |
+| Animations | Framer Motion | 12.x |
+| Auth + Billing | Clerk | 7.x (optional) |
+| ORM | Prisma | 7.x |
+| Database | SQLite via libsql | — |
+| ZIP extraction | JSZip | 3.x |
+| Password hashing | bcryptjs | 3.x |
+| Data fetching | SWR | 2.x |
+| ID generation | nanoid | 5.x |
+| QR codes | qrcode.react | 4.x |
+| Validation | Zod | 4.x |
 
 ---
 
@@ -176,101 +153,65 @@ GET /s/slug/page.html
 
 ```
 FileVault/
-├── .env.example                  # Template for all required env vars
-├── .env.local                    # Your local secrets (gitignored)
-├── .gitignore
-├── next.config.ts                # serverExternalPackages
-├── railway.json                  # Railway build + deploy config
 ├── prisma/
-│   ├── schema.prisma             # Site, SiteFile, SiteView models (SQLite)
-│   └── migrations/               # SQLite migration files
-├── public/
-│   └── favicon.ico
+│   ├── schema.prisma             # Site, SiteFile, SiteView, AnonUploadLog
+│   └── migrations/
+├── railway.json                  # Build + start commands
 └── src/
-    ├── proxy.ts                  # Next.js 16 middleware (Clerk optional guard)
+    ├── proxy.ts                  # Middleware: subdomain rewrite + Clerk auth
     ├── app/
-    │   ├── layout.tsx            # Root layout: conditional ClerkProvider, ThemeProvider
-    │   ├── page.tsx              # Landing page (HeroSection + features)
-    │   ├── globals.css           # CSS custom properties design tokens
+    │   ├── layout.tsx            # Root layout: conditional ClerkProvider
+    │   ├── page.tsx              # Landing page
+    │   ├── globals.css           # CSS custom properties (warm palette, light only)
+    │   ├── not-found.tsx         # Styled 404 page
     │   ├── (auth)/
     │   │   ├── sign-in/[[...sign-in]]/page.tsx
     │   │   └── sign-up/[[...sign-up]]/page.tsx
-    │   ├── pricing/
-    │   │   └── page.tsx          # Clerk PricingTable component
-    │   ├── dashboard/
-    │   │   └── page.tsx          # File manager with search + pagination
+    │   ├── pricing/page.tsx      # Tier comparison cards + FAQ
+    │   ├── help/page.tsx         # Accordion FAQ — 5 sections
+    │   ├── link-expired/page.tsx # Shown when a link's expiry has passed
+    │   ├── dashboard/page.tsx    # File manager
     │   ├── s/
-    │   │   ├── [slug]/
-    │   │   │   └── route.ts      # Redirect /slug → /slug/<entryFile>
-    │   │   └── [slug]/[...path]/
-    │   │       └── route.ts      # File serving: password gate + stream from disk
+    │   │   ├── [slug]/page.tsx   # Server Component: redirect or notFound()
+    │   │   └── [slug]/[...path]/route.ts  # File serving + password gate
     │   └── api/
-    │       ├── upload/
-    │       │   └── route.ts      # POST: upload pipeline
+    │       ├── upload/route.ts
     │       ├── files/
-    │       │   ├── route.ts      # GET: list user's sites (paginated + search)
-    │       │   └── [slug]/
-    │       │       └── route.ts  # DELETE / PATCH: manage a deployment
-    │       ├── analytics/
-    │       │   └── [slug]/
-    │       │       └── route.ts  # GET: view stats for a deployment
-    │       └── cron/
-    │           └── cleanup/
-    │               └── route.ts  # GET (cron): delete expired sites
+    │       │   ├── route.ts              # GET: list user sites
+    │       │   └── [slug]/route.ts       # DELETE / PATCH
+    │       ├── analytics/[slug]/route.ts # GET: view stats
+    │       └── cron/cleanup/route.ts     # Expired site cleanup
     ├── components/
-    │   ├── ui/
-    │   │   ├── Button.tsx
-    │   │   ├── Input.tsx
-    │   │   ├── Badge.tsx
-    │   │   ├── Card.tsx
-    │   │   ├── Dialog.tsx
-    │   │   ├── Tooltip.tsx
-    │   │   └── Spinner.tsx
-    │   ├── layout/
-    │   │   ├── Navbar.tsx        # useSafeAuth() for Clerk-optional rendering
-    │   │   ├── Footer.tsx
-    │   │   └── ThemeProvider.tsx
-    │   ├── upload/
-    │   │   ├── DropZone.tsx      # Animated drop area with file-type badges
-    │   │   ├── UploadProgress.tsx
-    │   │   ├── UploadSuccess.tsx  # Pulsing ring + copy + share buttons
-    │   │   └── ExpiryPicker.tsx
-    │   ├── dashboard/
-    │   │   ├── FileCard.tsx
-    │   │   ├── FileGrid.tsx      # Illustrated empty state
-    │   │   ├── RenameDialog.tsx
-    │   │   ├── DeleteDialog.tsx
-    │   │   ├── PasswordDialog.tsx
-    │   │   └── StatsBar.tsx
     │   ├── landing/
-    │   │   ├── HeroSection.tsx   # Animated gradient blobs + social proof strip
-    │   │   ├── FeaturesSection.tsx
-    │   │   └── HowItWorksSection.tsx
-    │   └── shared/
-    │       ├── CopyButton.tsx
-    │       ├── QRCodeDisplay.tsx
-    │       └── PasswordPrompt.tsx
-    ├── lib/
-    │   ├── prisma.ts             # Singleton PrismaClient with PrismaLibSql adapter
-    │   ├── storage/
-    │   │   ├── types.ts          # StorageDriver interface + FileEntry type
-    │   │   ├── index.ts          # Always exports localDriver
-    │   │   └── local.ts          # Filesystem driver (UPLOADS_PATH configurable)
-    │   ├── unzip.ts
-    │   ├── slug.ts
-    │   ├── mime.ts
-    │   ├── hash.ts
-    │   ├── analytics.ts
-    │   ├── ratelimit.ts
-    │   └── validations.ts
+    │   │   ├── HeroSection.tsx         # Two-column layout, rotating word
+    │   │   ├── FeaturesSection.tsx     # Asymmetric grid
+    │   │   ├── HowItWorksSection.tsx   # Horizontal 3-step timeline
+    │   │   └── TestimonialsSection.tsx # Pull-quote style
+    │   ├── layout/
+    │   │   ├── Navbar.tsx
+    │   │   └── Footer.tsx
+    │   ├── upload/
+    │   │   ├── DropZone.tsx
+    │   │   ├── UploadProgress.tsx
+    │   │   ├── UploadSuccess.tsx
+    │   │   └── ExpiryPicker.tsx
+    │   ├── dashboard/  (FileCard, FileGrid, RenameDialog, DeleteDialog, …)
+    │   ├── ui/         (Button, Input, Badge, Card, Dialog, …)
+    │   └── shared/     (CopyButton, QRCodeDisplay, …)
     ├── hooks/
-    │   ├── useUpload.ts
+    │   ├── useUpload.ts     # XHR upload with progress, slug support
     │   ├── useFiles.ts
-    │   ├── useClipboard.ts
-    │   └── useTheme.ts
-    └── types/
-        ├── api.ts
-        └── db.ts
+    │   └── useClipboard.ts
+    └── lib/
+        ├── limits.ts        # Tier config: maxBytes, maxLinks, expiry, customSlugAllowed
+        ├── prisma.ts
+        ├── storage/         # StorageDriver interface + local filesystem driver
+        ├── slug.ts          # generateSlug() + validateCustomSlug()
+        ├── unzip.ts
+        ├── mime.ts
+        ├── hash.ts
+        ├── analytics.ts
+        └── validations.ts
 ```
 
 ---
@@ -296,13 +237,14 @@ npm install
 cp .env.example .env.local
 ```
 
-Minimum required for local dev (no Clerk needed):
+Minimum required for local dev (no Clerk, no external storage):
 
-```bash
+```env
 DATABASE_URL="file:./prisma/filevault.db"
-UPLOADS_PATH="./uploads"
+DIRECT_URL="file:./prisma/filevault.db"
 NEXT_PUBLIC_BASE_URL="http://localhost:3000"
-CRON_SECRET="any-random-secret"
+NEXT_PUBLIC_BASE_DOMAIN="localhost"
+CRON_SECRET="dev-cron-secret"
 ```
 
 Uploaded files are written to `./uploads/<slug>/`. The SQLite database is at `./prisma/filevault.db`. Both paths are gitignored.
@@ -316,17 +258,12 @@ npx prisma migrate dev
 ### 4. Start the dev server
 
 ```bash
-npm run dev
+node node_modules/next/dist/bin/next dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Upload a ZIP or HTML file — you'll get a `/s/<slug>` URL immediately.
+> Note: this project uses a custom Next.js 16 build. `npm run dev` or `npx next dev` may fail with MODULE_NOT_FOUND on some Node versions — use the full path above.
 
-### 5. Testing the upload flow
-
-1. Create a ZIP containing `index.html`
-2. Drag it onto the hero drop zone
-3. Copy the resulting URL and open it — your page should render
-4. For password-protected sites: set a password in Advanced options and verify the prompt appears
+Open [http://localhost:3000](http://localhost:3000). Upload a ZIP or HTML file to get a `/s/<slug>` URL immediately.
 
 ---
 
@@ -336,33 +273,63 @@ Open [http://localhost:3000](http://localhost:3000). Upload a ZIP or HTML file �
 
 | Variable | Required | Description |
 |---|---|---|
-| `DATABASE_URL` | ✓ | SQLite file path. `file:./prisma/filevault.db` locally, `file:/app/uploads/filevault.db` on Railway. |
+| `DATABASE_URL` | ✓ | SQLite connection string. `file:./prisma/filevault.db` locally; `file:/app/uploads/filevault.db` on Railway. |
+| `DIRECT_URL` | ✓ | Direct connection (non-pooled). Same value as `DATABASE_URL` for SQLite. |
 
 ### Storage
 
 | Variable | Required | Description |
 |---|---|---|
-| `UPLOADS_PATH` | — | Directory for uploaded files. Default: `./uploads`. Set to `/app/uploads` on Railway. |
-
-### Auth (Clerk — optional)
-
-| Variable | Required | Description |
-|---|---|---|
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | — | Clerk publishable key. App works without this (anonymous mode). |
-| `CLERK_SECRET_KEY` | — | Clerk secret key. Required if publishable key is set. |
-| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | — | Default: `/sign-in` |
-| `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | — | Default: `/sign-up` |
-| `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL` | — | Default: `/dashboard` |
-| `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL` | — | Default: `/dashboard` |
+| `UPLOADS_PATH` | — | Directory for uploaded files. Defaults to `./uploads`. Set to `/app/uploads` on Railway. |
 
 ### Application
 
 | Variable | Required | Description |
 |---|---|---|
-| `NEXT_PUBLIC_BASE_URL` | ✓ | Public base URL, no trailing slash. Used to construct shareable links. |
-| `CRON_SECRET` | ✓ | Random secret (32+ chars) used to authorize the cleanup cron endpoint. |
-| `ANON_MAX_SIZE_MB` | — | Max upload size in MB for unauthenticated users. Default: `10`. |
-| `ANON_MAX_EXPIRY_HOURS` | — | Max expiry in hours for unauthenticated users. Default: `24`. |
+| `NEXT_PUBLIC_BASE_URL` | ✓ | Public base URL without trailing slash. Used in shareable link construction. |
+| `NEXT_PUBLIC_BASE_DOMAIN` | — | Base domain for subdomain routing. Default: `filevault.host`. |
+| `CRON_SECRET` | ✓ | Authorises the cleanup cron endpoint. Any random string. |
+
+### Auth (Clerk — optional)
+
+| Variable | Required | Description |
+|---|---|---|
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | — | Clerk publishable key. App runs fully without this (anonymous mode). |
+| `CLERK_SECRET_KEY` | — | Required if publishable key is set. |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | — | Default: `/sign-in` |
+| `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | — | Default: `/sign-up` |
+| `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL` | — | Default: `/dashboard` |
+| `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL` | — | Default: `/dashboard` |
+
+---
+
+## Tier System
+
+Tier limits are defined in a single source of truth: `src/lib/limits.ts`.
+
+| | Anonymous | Free | Pro |
+|---|---|---|---|
+| Max file size | 5 MB | 10 MB | 100 MB |
+| Link expiry | 24 h (forced) | 30 days max | Never |
+| Daily uploads | 3 per IP | Unlimited | Unlimited |
+| Max active links | — | 10 | Unlimited |
+| Password protection | No | Yes | Yes |
+| Custom link name | No | Yes | Yes |
+
+**Tier detection (server-side):**
+
+```typescript
+import { getTier, getLimits } from '@/lib/limits'
+
+const tier = getTier(userId, isPro)   // 'anon' | 'free' | 'pro'
+const limits = getLimits(tier)        // { maxBytes, maxLinks, maxExpiryOption, ... }
+```
+
+The `capExpiry()` utility silently downgrades a requested expiry to the tier maximum:
+
+```typescript
+const finalExpiry = capExpiry(requestedExpiry, limits.maxExpiryOption)
+```
 
 ---
 
@@ -372,16 +339,17 @@ Open [http://localhost:3000](http://localhost:3000). Upload a ZIP or HTML file �
 
 Upload a file and deploy it.
 
-**Auth:** Optional. Authenticated Pro users get larger size limits and longer expiry options.
+**Auth:** Optional. Determines tier limits.
 
 **Request:** `multipart/form-data`
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `file` | File | ✓ | A `.zip` or `.html` file |
+| `file` | File | ✓ | A `.zip` or `.html` (or any static file) |
 | `expiry` | string | — | `1h`, `24h`, `7d`, `30d`, `never`. Default: `24h` |
 | `password` | string | — | Password to protect the deployment |
 | `label` | string | — | Human-readable name shown in dashboard |
+| `slug` | string | — | Custom link name (signed-in users only) |
 
 **Response `200`:**
 ```json
@@ -389,13 +357,17 @@ Upload a file and deploy it.
   "slug": "abc123",
   "url": "https://filevault.host/s/abc123",
   "expiresAt": "2025-01-15T12:00:00.000Z",
-  "fileCount": 5
+  "fileCount": 5,
+  "totalSizeBytes": 48210
 }
 ```
 
 **Error responses:**
-- `400` — Invalid file type, file too large, or missing file
-- `429` — Rate limited (IP-based, 10 req/min anonymous)
+- `400` — Invalid file, blocked extension, or bad expiry option
+- `403` — Custom slug attempted without an account
+- `409` — Custom slug already taken
+- `413` — File exceeds tier size limit
+- `429` — Anonymous daily limit reached
 
 ---
 
@@ -403,29 +375,14 @@ Upload a file and deploy it.
 
 List the authenticated user's deployments.
 
-**Auth:** Required. Returns empty list if not authenticated.
+**Auth:** Required.
 
-**Query params:**
-
-| Param | Type | Description |
-|---|---|---|
-| `page` | number | Page number (1-indexed). Default: `1` |
-| `search` | string | Filter by label (substring match) |
+**Query params:** `page` (default `1`), `search` (label substring)
 
 **Response `200`:**
 ```json
 {
-  "sites": [
-    {
-      "slug": "abc123",
-      "label": "My portfolio",
-      "expiresAt": null,
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "totalSizeBytes": 123456,
-      "entryFile": "index.html",
-      "viewCount": 42
-    }
-  ],
+  "sites": [{ "slug": "abc123", "label": "...", "expiresAt": null, "viewCount": 42, ... }],
   "total": 15,
   "page": 1
 }
@@ -435,40 +392,26 @@ List the authenticated user's deployments.
 
 ### `DELETE /api/files/[slug]`
 
-Delete a deployment and its stored files.
-
-**Auth:** Required. Must own the deployment.
-
-**Response `200`:** `{ "success": true }`
+Delete a deployment and its files. **Auth:** Required, must own the deployment.
 
 ---
 
 ### `PATCH /api/files/[slug]`
 
-Update a deployment's metadata.
+Update label, password, or expiry. **Auth:** Required, must own the deployment.
 
-**Auth:** Required. Must own the deployment.
-
-**Request body (JSON):**
 ```json
-{
-  "label": "New name",
-  "password": "new-password",
-  "expiresAt": "2025-06-01T00:00:00.000Z"
-}
+{ "label": "New name", "password": "new-pass", "expiresAt": null }
 ```
 
-All fields are optional. Send `"password": ""` to remove a password. Send `"expiresAt": null` to remove expiry.
+Send `"password": ""` to remove a password. Send `"expiresAt": null` to remove expiry.
 
 ---
 
 ### `GET /api/analytics/[slug]`
 
-Get view statistics for a deployment.
+View stats for a deployment. **Auth:** Required, must own the deployment.
 
-**Auth:** Required. Must own the deployment.
-
-**Response `200`:**
 ```json
 { "total": 150, "last7Days": 42, "last30Days": 120 }
 ```
@@ -477,35 +420,10 @@ Get view statistics for a deployment.
 
 ### `GET /api/cron/cleanup`
 
-Deletes all expired sites (storage files + DB records).
+Deletes all expired sites. Requires `Authorization: Bearer <CRON_SECRET>`.
 
-**Auth:** `Authorization: Bearer <CRON_SECRET>` header required.
-
-**Response `200`:** `{ "deleted": 3 }`
-
----
-
-### `GET /s/[slug]`
-
-Redirects to the deployment's entry file.
-
-**Response:** `302` redirect to `/s/[slug]/<entryFile>`
-
----
-
-### `GET /s/[slug]/[...path]`
-
-Serves a file from a deployment.
-
-**Password gate:** If the site has a password and the `fv_pw_<slug>` cookie is missing or wrong, returns an HTML password form. On correct password submission, sets the cookie and proceeds.
-
-**Response:** `200` with file contents streamed from disk, with headers:
-```
-Content-Type: <detected MIME type>
-Cache-Control: public, max-age=3600
-Content-Security-Policy: sandbox allow-scripts allow-same-origin allow-popups allow-forms
-X-Content-Type-Options: nosniff
-X-Frame-Options: SAMEORIGIN
+```json
+{ "deleted": 3 }
 ```
 
 ---
@@ -514,38 +432,31 @@ X-Frame-Options: SAMEORIGIN
 
 ### Authentication (Clerk — optional)
 
-Clerk is optional. When `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` is not set, the app runs in anonymous mode: uploads work, file serving works, and the dashboard shows an empty state rather than an error.
-
-When Clerk is configured, it handles email/password sign-up, OAuth providers, and user sessions.
-
-The middleware in `src/proxy.ts` checks `CLERK_CONFIGURED` before enabling auth protection. All `auth()` calls in API routes are wrapped in try/catch so they degrade gracefully without keys.
+When `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` is absent, the app runs in anonymous mode — uploads work, file serving works, and the dashboard shows an empty state. All `auth()` calls in API routes are wrapped in try/catch so they fail gracefully.
 
 ### Subscription Billing (Clerk Billing)
 
-Billing is handled natively by Clerk — no Stripe setup required.
+Billing is handled natively by Clerk. No Stripe setup required.
 
-**Plans:**
-
-| Plan | Clerk key | Price | Limits |
-|---|---|---|---|
-| Free | `free_user` | $0 | 10 MB uploads, 24h max expiry |
-| Pro | `pro` | $1/month | 50 MB uploads, any expiry including never |
-
-**Checking plan in code (server-side):**
+**Checking plan (server-side):**
 ```typescript
-import { auth } from '@clerk/nextjs/server'
-const authObj = await auth()
-const isPro = authObj.has?.({ plan: 'user:pro' }) ?? false
+const { userId, has } = await auth()
+const isPro = has?.({ plan: 'user:pro' }) ?? false
 ```
 
 **Checking plan (client-side):**
 ```typescript
-import { useAuth } from '@clerk/nextjs'
-const { has } = useAuth()
-const isPro = has?.({ plan: 'user:pro' }) ?? false
+const { isSignedIn, has } = useAuth()
+const isPro = isSignedIn ? (has?.({ plan: 'user:pro' }) ?? false) : false
 ```
 
-The `/pricing` page renders Clerk's `<PricingTable />` component which handles the full checkout flow.
+### Setting up Clerk Billing
+
+1. Clerk dashboard → **Billing** → enable billing
+2. Create a **Free** plan (key: `free_user`, price: $0, set as default)
+3. Create a **Pro** plan (key: `pro`, price: your choice — currently ₹399/month)
+4. Publish both plans
+5. Visit `/pricing` to verify the checkout flow
 
 ---
 
@@ -553,9 +464,8 @@ The `/pricing` page renders Clerk's `<PricingTable />` component which handles t
 
 ### Upload validation
 
-- Allowed MIME types: `text/html`, `application/zip`, `application/x-zip-compressed`, `application/octet-stream`
 - Blocked extensions within ZIPs: `.php`, `.py`, `.rb`, `.sh`, `.exe`, `.bat`, `.cgi`, `.pl`, `.asp`, `.aspx`, `.jsp`
-- All extracted paths normalized with `path.normalize`; any path containing `..` is rejected
+- All extracted paths are sanitized with `path.normalize`; any path containing `..` is rejected
 
 ### File serving headers
 
@@ -566,133 +476,106 @@ X-Frame-Options: SAMEORIGIN
 Cache-Control: public, max-age=3600
 ```
 
-The `sandbox` CSP directive prevents deployed sites from accessing cookies or localStorage on the hosting domain.
+The `sandbox` CSP directive prevents deployed sites from accessing the hosting domain's cookies or localStorage.
 
 ### Password protection
 
-Passwords hashed with bcryptjs at cost factor 10. Cookie `fv_pw_<slug>` set with `HttpOnly; SameSite=Lax; Path=/s/<slug>`. Verified on every request by comparing to stored hash.
+bcryptjs at cost factor 10. Cookie `fv_pw_<slug>` is `HttpOnly; SameSite=Lax; Path=/s/<slug>; Max-Age=86400`. Verified on every request.
 
 ### Authentication guards
 
-- File management endpoints require a valid Clerk session
-- Ownership verified on every DELETE/PATCH
+- File management endpoints verify Clerk session and ownership
 - Cron endpoint requires `Authorization: Bearer <CRON_SECRET>`
-
-### Rate limiting
-
-In-memory rate limiter limits anonymous upload requests to 10 per minute per IP.
+- Custom slug creation is blocked for anonymous users server-side (not just UI)
 
 ---
 
 ## Deployment to Railway
 
-### Prerequisites
-
-- A [Railway](https://railway.app) account
-- A GitHub repository with the FileVault code
-- (Optional) A [Clerk](https://clerk.com) application
-
 ### Step 1 — Create a Railway project
 
-1. Go to [railway.app/new](https://railway.app/new)
-2. Select **Deploy from GitHub repo** and choose your repository
-3. Railway auto-detects the `railway.json` config — no additional setup needed
+1. Go to [railway.app/new](https://railway.app/new) → **Deploy from GitHub repo**
+2. Railway auto-detects `railway.json` — no additional setup needed
 
 ### Step 2 — Attach a Volume
 
 FileVault needs a persistent volume for both the SQLite database and uploaded files.
 
-1. In your Railway service → **Volumes** → **Add Volume**
-2. Set the **mount path** to `/app/uploads`
-3. Railway automatically sets `RAILWAY_VOLUME_MOUNT_PATH=/app/uploads`
+1. Service → **Volumes** → **Add Volume**
+2. Mount path: `/app/uploads`
 
-### Step 3 — Add environment variables
+### Step 3 — Environment variables
 
-In Railway → Project → **Variables**, add:
+```env
+DATABASE_URL              = file:/app/uploads/filevault.db
+DIRECT_URL                = file:/app/uploads/filevault.db
+UPLOADS_PATH              = /app/uploads
+NEXT_PUBLIC_BASE_URL      = https://<your-domain>
+NEXT_PUBLIC_BASE_DOMAIN   = filevault.host
+CRON_SECRET               = <random 32-char string>
 
-```
-DATABASE_URL       = file:/app/uploads/filevault.db
-UPLOADS_PATH       = /app/uploads
-NEXT_PUBLIC_BASE_URL = https://<your-service>.up.railway.app
-CRON_SECRET        = <random 32-char string>
-```
-
-Optionally (for auth + billing):
-```
+# Optional: Clerk auth
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = pk_live_...
 CLERK_SECRET_KEY                  = sk_live_...
+NEXT_PUBLIC_CLERK_SIGN_IN_URL     = /sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL     = /sign-up
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL = /dashboard
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL = /dashboard
 ```
 
-### Step 4 — Generate a public domain
+### Step 4 — Deploy
 
-In Railway → Service → **Settings** → **Networking** → **Generate Domain**.
-
-Update `NEXT_PUBLIC_BASE_URL` to match.
-
-### Step 5 — Deploy
-
-Railway automatically deploys on every push to your default branch.
-
-The `railway.json` `startCommand` runs `npx prisma migrate deploy` before starting the server, so the database schema is always up to date on boot:
+Railway deploys on every push. The `railway.json` runs migrations before starting:
 
 ```json
 {
-  "build": {
-    "builder": "NIXPACKS",
-    "buildCommand": "npm ci && npx prisma generate && npm run build"
-  },
-  "deploy": {
-    "startCommand": "npx prisma migrate deploy && npm start",
-    "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10
-  }
+  "build": { "buildCommand": "npx prisma generate && npm run build" },
+  "deploy": { "startCommand": "npx prisma migrate deploy && npm start" }
 }
 ```
 
-### Custom domain
-
-In Railway → Service → **Settings** → **Networking** → **Custom Domain**. Update `NEXT_PUBLIC_BASE_URL` to your domain.
-
 ---
 
-## Clerk Billing Setup
+## Custom Domains & Subdomains
 
-To enable the subscription system in Clerk:
+FileVault uses wildcard DNS to serve user sites at `<slug>.filevault.host`.
 
-### 1. Enable Billing
+### DNS setup (Namecheap or any registrar)
 
-Clerk dashboard → **Billing** → toggle **Enable Billing** on.
+Add two CNAME records pointing to your Railway service:
 
-### 2. Create plans
+| Host | Value |
+|---|---|
+| `@` | `<your-service>.up.railway.app` |
+| `*` | `<your-service>.up.railway.app` |
 
-**Free plan:**
-- Key: `free_user` · Price: $0/month · Mark as **default**
+### Railway custom domains
 
-**Pro plan:**
-- Key: `pro` · Price: $1/month
+Add both `filevault.host` and `*.filevault.host` in your Railway service settings. Railway issues a wildcard SSL certificate automatically.
 
-### 3. Publish both plans
+> **Note:** Railway Hobby plan allows 2 custom domains. Using `filevault.host` + `*.filevault.host` fills both slots — do not add `www.filevault.host` separately.
 
-Each plan must be in **Published** state for `<PricingTable />` to display it.
+### How routing works
 
-### 4. Verify
-
-Visit `/pricing` on your deployed site. After subscribing to Pro, `has({ plan: 'user:pro' })` returns `true`, unlocking 50 MB uploads and extended expiry.
+`src/proxy.ts` intercepts every request. If the host ends in `.filevault.host`, it rewrites the path to `/s/<subdomain>` and lets Next.js handle it. Reserved subdomains (`www`, `api`, `app`, `admin`, `dashboard`, `login`, `signup`, `pricing`, `help`, `s`, etc.) are excluded from rewriting.
 
 ---
 
 ## Cron Jobs
 
-FileVault uses a single cron job to clean up expired deployments.
-
 **Endpoint:** `GET /api/cron/cleanup`
 
 **What it does:**
-1. Queries all `Site` records where `expiresAt < now()`
-2. Calls `storageDriver.deletePrefix(storagePrefix)` to delete files from disk
+1. Queries all `Site` rows where `expiresAt < now()`
+2. Calls `storageDriver.deletePrefix(site.storagePrefix)` to remove files from disk
 3. Deletes the `Site` record (cascades to `SiteFile` and `SiteView`)
 
-To run it on a schedule, set up a Railway cron service or an external cron (e.g. cron-job.org) to `GET /api/cron/cleanup` daily with the header `Authorization: Bearer <CRON_SECRET>`.
+Set up an external cron (Railway cron service, cron-job.org, etc.) to call this endpoint daily:
+
+```
+GET https://filevault.host/api/cron/cleanup
+Authorization: Bearer <CRON_SECRET>
+```
 
 ---
 
@@ -703,33 +586,28 @@ model Site {
   id             String     @id @default(cuid())
   slug           String     @unique
   label          String     @default("")
-  userId         String?                          // null = anonymous upload
-  passwordHash   String?                          // bcrypt hash
-  expiresAt      DateTime?                        // null = never expires
+  userId         String?                         // null = anonymous
+  passwordHash   String?                         // bcrypt hash
+  expiresAt      DateTime?                       // null = never
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
   totalSizeBytes BigInt     @default(0)
   entryFile      String     @default("index.html")
-  storagePrefix  String                           // local dir path
+  storagePrefix  String                          // filesystem path prefix
   files          SiteFile[]
   views          SiteView[]
-
-  @@index([userId])
-  @@index([expiresAt])
-  @@index([createdAt])
 }
 
 model SiteFile {
   id         String   @id @default(cuid())
   siteId     String
   site       Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  path       String                               // e.g. "css/style.css"
+  path       String                              // e.g. "css/style.css"
   mimeType   String
   sizeBytes  Int
-  storageKey String                               // absolute path on disk
+  storageKey String                              // absolute path on disk
   createdAt  DateTime @default(now())
 
-  @@index([siteId])
   @@unique([siteId, path])
 }
 
@@ -740,9 +618,14 @@ model SiteView {
   ip        String?
   userAgent String?
   viewedAt  DateTime @default(now())
+}
 
-  @@index([siteId])
-  @@index([siteId, viewedAt])
+model AnonUploadLog {
+  id        String   @id @default(cuid())
+  ip        String
+  createdAt DateTime @default(now())
+
+  @@index([ip, createdAt])   // used for daily rate-limit count queries
 }
 ```
 
@@ -752,15 +635,8 @@ model SiteView {
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feat/your-feature`
-3. Make changes and run `npm run build` to verify no TypeScript errors
+3. Verify no TypeScript errors: `node node_modules/typescript/bin/tsc --noEmit`
 4. Submit a pull request with a clear description
-
-### Code style
-
-- TypeScript strict mode throughout
-- No `any` types (use `unknown` + type narrowing)
-- Tailwind CSS only — no inline styles
-- Comments only when the **why** is non-obvious
 
 ---
 
