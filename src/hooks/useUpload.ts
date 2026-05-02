@@ -14,6 +14,7 @@ export interface UploadOptions {
   expiry: string
   password?: string
   label?: string
+  slug?: string
 }
 
 type UploadState =
@@ -54,6 +55,7 @@ export function useUpload() {
     formData.append('expiry', options.expiry)
     if (options.password) formData.append('password', options.password)
     if (options.label) formData.append('label', options.label)
+    if (options.slug) formData.append('slug', options.slug)
 
     const xhr = new XMLHttpRequest()
 

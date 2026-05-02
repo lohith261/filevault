@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
+const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? 'filevault.host'
+
+const RESERVED_SUBDOMAINS = new Set([
+  'www', 'api', 'app', 'admin', 'mail', 'smtp', 'ftp', 'localhost',
+])
+
 function isValidClerkKey(key: string | undefined): boolean {
   if (!key) return false
   try {
-    // Clerk keys are "pk_live_" or "pk_test_" followed by base64-encoded data containing a domain
     const [, encoded] = key.split('_', 3).slice(1)
     if (!encoded) return false
     const decoded = Buffer.from(encoded, 'base64').toString('utf8')
@@ -33,6 +38,18 @@ const clerkHandler = clerkMiddleware(async (auth, req) => {
 })
 
 export default function handler(req: NextRequest) {
+  const host = req.headers.get('host') ?? ''
+
+  // Rewrite subdomain requests to /s/[slug] before auth runs
+  if (host.endsWith(`.${BASE_DOMAIN}`)) {
+    const subdomain = host.slice(0, -(BASE_DOMAIN.length + 1))
+    if (subdomain && !RESERVED_SUBDOMAINS.has(subdomain)) {
+      const url = req.nextUrl.clone()
+      url.pathname = `/s/${subdomain}`
+      return NextResponse.rewrite(url)
+    }
+  }
+
   if (!CLERK_CONFIGURED) return NextResponse.next()
   return clerkHandler(req, {} as never)
 }

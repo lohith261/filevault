@@ -8,6 +8,7 @@ import { hashPassword } from '@/lib/hash'
 import { prisma } from '@/lib/prisma'
 import { expiryToDate, EXPIRY_OPTIONS, type ExpiryOption } from '@/lib/validations'
 import { getTier, getLimits, capExpiry } from '@/lib/limits'
+import { validateCustomSlug } from '@/lib/slug'
 import type { ExtractedFile } from '@/lib/unzip'
 
 export const maxDuration = 60
@@ -29,6 +30,7 @@ export async function POST(req: NextRequest) {
     const expiry = (formData.get('expiry') as string) ?? '24h'
     const password = formData.get('password') as string | null
     const label = (formData.get('label') as string) ?? ''
+    const customSlug = (formData.get('slug') as string | null)?.trim().toLowerCase() || null
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided.' }, { status: 400 })
@@ -88,6 +90,27 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Custom slug — Pro only
+    if (customSlug) {
+      if (tier !== 'pro') {
+        return NextResponse.json(
+          { error: 'Custom slugs require a Pro plan.' },
+          { status: 403 }
+        )
+      }
+      const slugError = validateCustomSlug(customSlug)
+      if (slugError) {
+        return NextResponse.json({ error: slugError }, { status: 400 })
+      }
+      const existing = await prisma.site.findUnique({ where: { slug: customSlug } })
+      if (existing) {
+        return NextResponse.json(
+          { error: `"${customSlug}" is already taken. Try a different name.` },
+          { status: 409 }
+        )
+      }
+    }
+
     if (!EXPIRY_OPTIONS.includes(expiry as ExpiryOption)) {
       return NextResponse.json({ error: 'Invalid expiry option.' }, { status: 400 })
     }
@@ -118,7 +141,7 @@ export async function POST(req: NextRequest) {
       ]
     }
 
-    const slug = generateSlug()
+    const slug = customSlug ?? generateSlug()
     const storagePrefix = await storageDriver.putFiles(slug, extractedFiles)
     const entryFile = detectEntryFile(extractedFiles)
     const totalSizeBytes = extractedFiles.reduce((sum, f) => sum + f.sizeBytes, 0)

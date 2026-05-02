@@ -10,6 +10,7 @@ import { ExpiryPicker } from '@/components/upload/ExpiryPicker'
 import { Input } from '@/components/ui/Input'
 import { useUpload } from '@/hooks/useUpload'
 import { getTier, getLimits } from '@/lib/limits'
+import { validateCustomSlug } from '@/lib/slug'
 
 const ROTATING_WORDS = ['HTML sites', 'static apps', 'landing pages', 'portfolios', 'demos']
 
@@ -53,12 +54,25 @@ export function HeroSection() {
 
   const [expiry, setExpiry] = useState('24h')
   const [password, setPassword] = useState('')
+  const [customSlug, setCustomSlug] = useState('')
+  const [slugError, setSlugError] = useState<string | null>(null)
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
 
+  const handleSlugChange = (val: string) => {
+    const clean = val.toLowerCase().replace(/[^a-z0-9-]/g, '')
+    setCustomSlug(clean)
+    setSlugError(clean ? (validateCustomSlug(clean) ?? null) : null)
+  }
+
   const handleFileSelected = (file: File) => {
+    if (customSlug && slugError) return
     setUploadError(null)
-    upload(file, { expiry, password: password || undefined })
+    upload(file, {
+      expiry,
+      password: password || undefined,
+      slug: customSlug || undefined,
+    })
   }
 
   const isActive = state.status === 'uploading' || state.status === 'processing'
@@ -154,6 +168,32 @@ export function HeroSection() {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                           />
+                          {isPro ? (
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-sm font-medium text-[var(--muted-foreground)]">
+                                Custom link name <span className="text-xs">(optional)</span>
+                              </label>
+                              <div className="flex items-center rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm focus-within:border-[var(--primary)] transition-colors">
+                                <input
+                                  type="text"
+                                  value={customSlug}
+                                  onChange={(e) => handleSlugChange(e.target.value)}
+                                  placeholder="my-project"
+                                  maxLength={30}
+                                  className="min-w-0 flex-1 bg-transparent font-mono text-[var(--foreground)] outline-none placeholder:text-[var(--muted-foreground)]"
+                                />
+                                <span className="ml-1 shrink-0 text-xs text-[var(--muted-foreground)]">.filevault.host</span>
+                              </div>
+                              {slugError && (
+                                <p className="text-xs text-[var(--destructive)]">{slugError}</p>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 rounded-lg border border-dashed border-[var(--border)] px-3 py-2.5">
+                              <span className="text-xs text-[var(--muted-foreground)]">Custom link name (e.g. <span className="font-mono">myproject.filevault.host</span>)</span>
+                              <span className="ml-auto rounded-full bg-[var(--primary)]/10 px-2 py-0.5 text-xs font-semibold text-[var(--primary)]">Pro</span>
+                            </div>
+                          )}
                         </div>
                       </motion.div>
                     )}
