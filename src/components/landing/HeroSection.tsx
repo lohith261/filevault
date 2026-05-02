@@ -176,7 +176,7 @@ export function HeroSection() {
                   )}
 
                   <p className="mt-3 text-center text-xs text-[var(--muted-foreground)]">
-                    {isPro ? '50 MB max' : '10 MB free · 50 MB with Pro'} · No account required
+                    {isPro ? '50 MB max' : '10 MB free · 50 MB with Pro'} · Any file type · No account required
                   </p>
                 </div>
               </motion.div>

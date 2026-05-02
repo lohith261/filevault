@@ -11,15 +11,6 @@ interface DropZoneProps {
   disabled?: boolean
 }
 
-const ACCEPTED_TYPES = {
-  'application/zip': ['.zip'],
-  'application/x-zip-compressed': ['.zip'],
-  'text/html': ['.html', '.htm'],
-  'text/css': ['.css'],
-  'application/javascript': ['.js'],
-  'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.ico'],
-}
-
 export function DropZone({ onFileSelected, onReject, disabled }: DropZoneProps) {
   const onDrop = useCallback(
     (accepted: File[], rejectedFiles: FileRejection[]) => {
@@ -36,7 +27,6 @@ export function DropZone({ onFileSelected, onReject, disabled }: DropZoneProps) 
 
   const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
     onDrop,
-    accept: ACCEPTED_TYPES,
     maxSize: 50 * 1024 * 1024,
     multiple: false,
     disabled,
@@ -121,11 +111,12 @@ export function DropZone({ onFileSelected, onReject, disabled }: DropZoneProps) 
               </p>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap justify-center">
               <span className="rounded-md bg-[var(--muted)] px-2 py-0.5 font-mono text-xs font-medium text-[var(--foreground)]">.zip</span>
-              <span className="text-xs text-[var(--muted-foreground)]">or</span>
               <span className="rounded-md bg-[var(--muted)] px-2 py-0.5 font-mono text-xs font-medium text-[var(--foreground)]">.html</span>
-              <span className="text-xs text-[var(--muted-foreground)]">· up to 50 MB</span>
+              <span className="rounded-md bg-[var(--muted)] px-2 py-0.5 font-mono text-xs font-medium text-[var(--foreground)]">.pdf</span>
+              <span className="rounded-md bg-[var(--muted)] px-2 py-0.5 font-mono text-xs font-medium text-[var(--foreground)]">.mp4</span>
+              <span className="text-xs text-[var(--muted-foreground)]">+ any file · up to 50 MB</span>
             </div>
           </motion.div>
         )}
