@@ -25,6 +25,9 @@ const CLERK_CONFIGURED = isValidClerkKey(process.env.NEXT_PUBLIC_CLERK_PUBLISHAB
 const isPublicRoute = createRouteMatcher([
   '/',
   '/pricing',
+  '/help',
+  '/not-found',
+  '/link-expired',
   '/sign-in(.*)',
   '/sign-up(.*)',
   '/s/(.*)',

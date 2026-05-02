@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@clerk/nextjs'
 import { DropZone } from '@/components/upload/DropZone'
@@ -16,6 +16,14 @@ const ROTATING_WORDS = ['HTML sites', 'static apps', 'landing pages', 'portfolio
 
 function RotatingWord() {
   const [index, setIndex] = useState(0)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => { setMounted(true) }, [])
+
+  if (!mounted) {
+    return <span className="text-[var(--primary)]">{ROTATING_WORDS[0]}</span>
+  }
+
   return (
     <AnimatePresence mode="wait">
       <motion.span
