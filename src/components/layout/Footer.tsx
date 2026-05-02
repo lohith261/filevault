@@ -1,13 +1,24 @@
+import Link from 'next/link'
+
 export function Footer() {
   return (
-    <footer className="border-t border-[var(--border)] py-8 text-center text-sm text-[var(--muted-foreground)]">
-      <div className="mx-auto max-w-6xl px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <p>© {new Date().getFullYear()} FileVault. Host anything, instantly.</p>
-        <div className="flex items-center gap-4">
+    <footer className="border-t border-[var(--border)] bg-[var(--background)]">
+      <div className="mx-auto max-w-6xl px-6 py-10 flex flex-col sm:flex-row items-start justify-between gap-8">
+        <div>
+          <p className="font-bold text-[var(--foreground)]">FileVault</p>
+          <p className="mt-1 text-xs text-[var(--muted-foreground)]">Host anything, instantly.</p>
+        </div>
+        <nav className="flex flex-wrap gap-x-8 gap-y-2 text-sm text-[var(--muted-foreground)]">
+          <Link href="/pricing" className="hover:text-[var(--foreground)] transition-colors">Pricing</Link>
+          <Link href="/help" className="hover:text-[var(--foreground)] transition-colors">Help</Link>
           <a href="#" className="hover:text-[var(--foreground)] transition-colors">Privacy</a>
           <a href="#" className="hover:text-[var(--foreground)] transition-colors">Terms</a>
-          <a href="#" className="hover:text-[var(--foreground)] transition-colors">API</a>
-        </div>
+        </nav>
+      </div>
+      <div className="border-t border-[var(--border)] px-6 py-4">
+        <p className="mx-auto max-w-6xl text-xs text-[var(--muted-foreground)]">
+          © {new Date().getFullYear()} FileVault
+        </p>
       </div>
     </footer>
   )

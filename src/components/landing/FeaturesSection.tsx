@@ -5,97 +5,123 @@ import { motion } from 'framer-motion'
 const FEATURES = [
   {
     icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M13 10V3L4 14h7v7l9-11h-7z" />
       </svg>
     ),
     title: 'Instant deployment',
-    description: 'From upload to live URL in under 3 seconds. No build step, no config.',
+    description: 'From upload to live URL in under 3 seconds. No build step, no config, no waiting. Drop and go.',
+    featured: true,
   },
   {
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
       </svg>
     ),
     title: 'ZIP support',
-    description: 'Upload an entire static site as a ZIP. We unzip, detect entry point, and host everything.',
+    description: 'Upload an entire static site as a ZIP. We unzip, detect the entry point, and host everything.',
+    featured: false,
   },
   {
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
       </svg>
     ),
     title: 'Password protection',
-    description: 'Optionally lock your deployment behind a password. Share privately.',
+    description: 'Lock any deployment behind a password. Share privately with clients or teammates.',
+    featured: false,
   },
   {
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
     title: 'Auto-expiry',
-    description: 'Set files to auto-delete after 1h, 24h, 7d, or 30 days. Or keep them forever.',
+    description: 'Set links to auto-delete after 1h, 24h, 7d, or 30 days. Or keep them forever on Pro.',
+    featured: false,
   },
   {
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
       </svg>
     ),
     title: 'Analytics',
-    description: 'Track views for each deployment. See 24h, 7d, and all-time stats.',
+    description: 'Track views per deployment. See 24h, 7d, and all-time stats right from your dashboard.',
+    featured: false,
   },
   {
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
       </svg>
     ),
-    title: 'QR codes',
-    description: 'Every link gets a QR code. Perfect for sharing at events or in presentations.',
+    title: 'Custom subdomains',
+    description: 'Pick a memorable link name. Your site lives at myproject.filevault.host — free for all signed-in users.',
+    featured: false,
   },
 ]
 
 export function FeaturesSection() {
+  const [featured, ...rest] = FEATURES
+
   return (
-    <section className="py-24 px-4">
+    <section className="py-24 px-6 border-t border-[var(--border)]">
       <div className="mx-auto max-w-5xl">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="mb-12 text-center"
+          className="mb-12"
         >
-          <h2 className="text-3xl font-bold text-[var(--foreground)]">Everything you need</h2>
-          <p className="mt-3 text-[var(--muted-foreground)]">
+          <h2 className="text-4xl font-bold text-[var(--foreground)]">Everything you need</h2>
+          <p className="mt-3 text-[var(--muted-foreground)] max-w-md">
             Simple enough for a quick demo, powerful enough for production previews.
           </p>
         </motion.div>
 
+        {/* Featured card — full width */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.4 }}
+          className="mb-4 rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 flex flex-col sm:flex-row sm:items-center gap-6 hover:shadow-md hover:shadow-black/[0.06] transition-shadow duration-200"
+        >
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[var(--primary)]/8 text-[var(--primary)]">
+            {featured.icon}
+          </div>
+          <div>
+            <h3 className="text-xl font-semibold text-[var(--foreground)]">{featured.title}</h3>
+            <p className="mt-1.5 text-[var(--muted-foreground)] leading-relaxed max-w-xl">{featured.description}</p>
+          </div>
+          <div className="sm:ml-auto shrink-0">
+            <span className="rounded-full bg-[var(--primary)]/8 px-3 py-1 text-xs font-semibold text-[var(--primary)]">
+              Under 3 seconds
+            </span>
+          </div>
+        </motion.div>
+
+        {/* Rest — 2-col then 3-col grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {FEATURES.map((feature, i) => (
+          {rest.map((feature, i) => (
             <motion.div
               key={feature.title}
-              initial={{ opacity: 0, y: 24 }}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              whileHover={{ y: -4, transition: { duration: 0.15 } }}
               viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: i * 0.05 }}
-              className="group relative overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 hover:border-[var(--primary)]/30 hover:shadow-lg hover:shadow-[var(--primary)]/5 transition-all duration-200"
+              transition={{ duration: 0.4, delay: i * 0.06 }}
+              className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 hover:shadow-md hover:shadow-black/[0.07] hover:-translate-y-0.5 transition-all duration-200"
             >
-              {/* Hover gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-[var(--primary)]/3 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-              <div className="relative">
-                <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--primary)]/20 to-[var(--primary)]/5 text-[var(--primary)]">
-                  {feature.icon}
-                </div>
-                <h3 className="font-semibold text-[var(--foreground)] mb-1">{feature.title}</h3>
-                <p className="text-sm text-[var(--muted-foreground)] leading-relaxed">{feature.description}</p>
+              <div className="mb-3 text-[var(--primary)]">
+                {feature.icon}
               </div>
+              <h3 className="font-semibold text-[var(--foreground)]">{feature.title}</h3>
+              <p className="mt-1.5 text-sm text-[var(--muted-foreground)] leading-relaxed">{feature.description}</p>
             </motion.div>
           ))}
         </div>

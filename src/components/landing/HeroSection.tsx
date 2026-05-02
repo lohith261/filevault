@@ -78,34 +78,54 @@ export function HeroSection() {
   const isActive = state.status === 'uploading' || state.status === 'processing'
 
   return (
-    <section className="hero-glow relative flex min-h-screen items-center justify-center px-4 pt-16">
-      <div className="w-full max-w-md mx-auto">
+    <section className="hero-glow relative min-h-screen flex items-center px-6 pt-28 pb-16">
+      <div className="mx-auto max-w-6xl w-full grid lg:grid-cols-[1fr_460px] gap-12 lg:gap-20 items-center">
 
-        {/* Headline */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45 }}
-          className="mb-8 text-center"
-        >
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-[var(--foreground)] leading-[1.15]">
-            Host your <RotatingWord />.
-            <br />
-            <span className="bg-gradient-to-r from-violet-500 to-blue-500 bg-clip-text text-transparent">
-              Instantly.
-            </span>
-          </h1>
-          <p className="mt-3 text-sm text-[var(--muted-foreground)]">
-            Drop a ZIP or HTML file. Get a link in seconds.
-          </p>
-        </motion.div>
-
-        {/* Upload card */}
+        {/* Left — headline */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, delay: 0.08 }}
-          className="rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-xl shadow-black/5"
+          transition={{ duration: 0.5 }}
+        >
+          <p className="text-xs font-semibold uppercase tracking-widest text-[var(--primary)] mb-5">
+            Instant static hosting
+          </p>
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold leading-[1.05] tracking-tight text-[var(--foreground)]">
+            Host your{' '}
+            <RotatingWord />.{' '}
+            <span className="text-[var(--primary)]">Instantly.</span>
+          </h1>
+          <p className="mt-6 text-lg text-[var(--muted-foreground)] max-w-[420px] leading-relaxed">
+            Drop a ZIP or HTML file. Get a shareable link in seconds. No account needed.
+          </p>
+          <p className="mt-6 flex items-center gap-3 text-sm text-[var(--muted-foreground)]">
+            <span className="flex items-center gap-1.5">
+              <svg className="h-3.5 w-3.5 text-[var(--success)]" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              No build step
+            </span>
+            <span className="flex items-center gap-1.5">
+              <svg className="h-3.5 w-3.5 text-[var(--success)]" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              No config
+            </span>
+            <span className="flex items-center gap-1.5">
+              <svg className="h-3.5 w-3.5 text-[var(--success)]" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              Free to start
+            </span>
+          </p>
+        </motion.div>
+
+        {/* Right — upload card */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-xl shadow-black/[0.06]"
         >
           <AnimatePresence mode="wait">
             {state.status === 'success' ? (
@@ -121,7 +141,7 @@ export function HeroSection() {
               </motion.div>
             ) : (
               <motion.div key="upload" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                {/* Advanced options — top of card, collapsed by default */}
+                {/* Options toggle */}
                 <div className="border-b border-[var(--border)] px-5 py-3">
                   <button
                     onClick={() => setShowAdvanced(!showAdvanced)}
@@ -129,13 +149,11 @@ export function HeroSection() {
                   >
                     <span>Options</span>
                     <div className="flex items-center gap-1">
-                      <span className="rounded-md bg-[var(--muted)] px-1.5 py-0.5 font-mono text-[10px]">
+                      <span className="rounded bg-[var(--muted)] px-1.5 py-0.5 font-mono text-[10px]">
                         {expiry}
                       </span>
                       {password && (
-                        <span className="rounded-md bg-[var(--muted)] px-1.5 py-0.5 text-[10px]">
-                          🔒
-                        </span>
+                        <span className="rounded bg-[var(--muted)] px-1.5 py-0.5 text-[10px]">🔒</span>
                       )}
                       <svg
                         className={`h-3 w-3 transition-transform duration-200 ml-0.5 ${showAdvanced ? 'rotate-180' : ''}`}
@@ -169,7 +187,7 @@ export function HeroSection() {
                               <label className="text-sm font-medium text-[var(--muted-foreground)]">
                                 Custom link name <span className="text-xs">(optional)</span>
                               </label>
-                              <div className="flex items-center rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm focus-within:border-[var(--primary)] transition-colors">
+                              <div className="flex items-center rounded border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm focus-within:border-[var(--primary)] transition-colors">
                                 <input
                                   type="text"
                                   value={customSlug}
@@ -185,8 +203,8 @@ export function HeroSection() {
                               )}
                             </div>
                           ) : (
-                            <div className="flex items-center gap-2 rounded-lg border border-dashed border-[var(--border)] px-3 py-2.5">
-                              <span className="text-xs text-[var(--muted-foreground)]">Custom link name (e.g. <span className="font-mono">myproject.filevault.host</span>)</span>
+                            <div className="flex items-center gap-2 rounded border border-dashed border-[var(--border)] px-3 py-2.5">
+                              <span className="text-xs text-[var(--muted-foreground)]">Custom link (e.g. <span className="font-mono">myproject.filevault.host</span>)</span>
                               <span className="ml-auto rounded-full bg-[var(--primary)]/10 px-2 py-0.5 text-xs font-semibold text-[var(--primary)]">Sign in</span>
                             </div>
                           )}
@@ -223,6 +241,7 @@ export function HeroSection() {
             )}
           </AnimatePresence>
         </motion.div>
+
       </div>
     </section>
   )
