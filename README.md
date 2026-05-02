@@ -78,7 +78,7 @@ Runs entirely on [Railway](https://railway.app) with SQLite and local filesystem
 
 ## Live Demo
 
-→ **[filevault-production-d823.up.railway.app](https://filevault-production-d823.up.railway.app)**
+→ **[filevault.host](https://filevault.host)**
 
 ---
 
@@ -387,7 +387,7 @@ Upload a file and deploy it.
 ```json
 {
   "slug": "abc123",
-  "url": "https://filevault-production-d823.up.railway.app/s/abc123",
+  "url": "https://filevault.host/s/abc123",
   "expiresAt": "2025-01-15T12:00:00.000Z",
   "fileCount": 5
 }
