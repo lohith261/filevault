@@ -5,12 +5,16 @@ import { ShowcaseCards } from './ShowcaseCards'
 const DEPLOYMENT_FLOOR = 50
 
 async function getDeploymentCount(): Promise<string> {
-  const rawCount = await prisma.site.count()
-  const count = Math.max(rawCount, DEPLOYMENT_FLOOR)
-  if (count >= 1000) {
-    return `${Math.floor(count / 100) * 100}+`
+  try {
+    const rawCount = await prisma.site.count()
+    const count = Math.max(rawCount, DEPLOYMENT_FLOOR)
+    if (count >= 1000) {
+      return `${Math.floor(count / 100) * 100}+`
+    }
+    return `${count}+`
+  } catch {
+    return `${DEPLOYMENT_FLOOR}+`
   }
-  return `${count}+`
 }
 
 export async function SocialProofSection() {
