@@ -11,8 +11,8 @@ export function Footer() {
         <nav className="flex flex-wrap gap-x-8 gap-y-2 text-sm text-[var(--muted-foreground)]">
           <Link href="/pricing" className="hover:text-[var(--foreground)] transition-colors">Pricing</Link>
           <Link href="/help" className="hover:text-[var(--foreground)] transition-colors">Help</Link>
-          <a href="#" className="hover:text-[var(--foreground)] transition-colors">Privacy</a>
-          <a href="#" className="hover:text-[var(--foreground)] transition-colors">Terms</a>
+          <Link href="/privacy" className="hover:text-[var(--foreground)] transition-colors">Privacy</Link>
+          <Link href="/tos" className="hover:text-[var(--foreground)] transition-colors">Terms</Link>
         </nav>
       </div>
       <div className="border-t border-[var(--border)] px-6 py-4">

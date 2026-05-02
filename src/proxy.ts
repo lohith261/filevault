@@ -5,7 +5,7 @@ const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? 'filevault.host'
 
 const RESERVED_SUBDOMAINS = new Set([
   'www', 'api', 'app', 'admin', 'mail', 'smtp', 'ftp', 'localhost',
-  'dashboard', 'login', 'signup', 'pricing', 'blog', 'help', 's',
+  'dashboard', 'login', 'signup', 'pricing', 'blog', 'help', 's', 'tos', 'privacy',
 ])
 
 function isValidClerkKey(key: string | undefined): boolean {
@@ -26,6 +26,8 @@ const isPublicRoute = createRouteMatcher([
   '/',
   '/pricing',
   '/help',
+  '/tos',
+  '/privacy',
   '/not-found',
   '/link-expired',
   '/sign-in(.*)',
