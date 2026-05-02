@@ -22,9 +22,7 @@ export function UploadSuccess({ result, onReset }: UploadSuccessProps) {
   const [showShare, setShowShare] = useState(false)
   const { copied, copy } = useClipboard()
 
-  const fullUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/s/${result.slug}`
-    : result.url
+  const fullUrl = result.url
 
   const tweetUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(fullUrl)}&text=${encodeURIComponent('Check out my site hosted on FileVault 🚀')}`
   const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(fullUrl)}`
