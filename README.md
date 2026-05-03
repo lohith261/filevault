@@ -592,7 +592,7 @@ Full schema: [`prisma/schema.prisma`](prisma/schema.prisma)
 - [x] `DELETE /v1/files/:id` — delete file, embeddings, and storage object
 - [x] `POST /v1/files/:id/index` — index an already-uploaded file on demand
 - [x] Per-agent rate limiting — 20 uploads/min, `Retry-After` header on 429
-- [ ] Agent dashboard UI — web interface to manage agents, browse files, run searches
+- [x] Agent dashboard UI — `/agents` page with file management, semantic search, and memory
 
 ### Mid-term (v0.3)
 

@@ -44,6 +44,10 @@ node node_modules/next/dist/bin/next dev
 | `src/lib/search/similarity.ts` | `cosineSimilarity(a, b)`, `rankResults(results, topK)` |
 | `src/lib/indexing.ts` | `indexFile(agentId, fileId, buffer, mimeType, filename)` → `IndexResult`, `streamToBuffer(stream)` |
 | `src/lib/rateLimit.ts` | `checkUploadRateLimit(agentId)` → `{ allowed, retryAfterSeconds }` — 20 uploads/min |
+| `src/hooks/useAgentFiles.ts` | SWR hook for v1/files — `deleteFile`, `indexFile`, `uploadFile` |
+| `src/hooks/useAgentMemory.ts` | SWR hook for v1/memory — `addMemory` |
+| `src/components/agents/` | `AgentSetup`, `AgentDashboard`, `AgentFileCard`, `AgentSearch`, `AgentMemory` |
+| `src/app/agents/page.tsx` | `/agents` page — key stored in localStorage under `fv_agent_key` |
 | `src/lib/limits.ts` | `getTier()`, `getLimits()`, `capExpiry()` — tier config |
 | `src/lib/validations.ts` | Shared Zod schemas |
 | `src/types/api.ts` | Shared TypeScript types for API responses |
