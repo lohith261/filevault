@@ -42,6 +42,8 @@ node node_modules/next/dist/bin/next dev
 | `src/lib/chunking/index.ts` | `chunkText(text, chunkSize=500, overlap=100)` → `string[]` |
 | `src/lib/extractors/index.ts` | `extractText(buffer, mimeType, filename)` → HTML/TXT/PDF/JSON |
 | `src/lib/search/similarity.ts` | `cosineSimilarity(a, b)`, `rankResults(results, topK)` |
+| `src/lib/indexing.ts` | `indexFile(agentId, fileId, buffer, mimeType, filename)` → `IndexResult`, `streamToBuffer(stream)` |
+| `src/lib/rateLimit.ts` | `checkUploadRateLimit(agentId)` → `{ allowed, retryAfterSeconds }` — 20 uploads/min |
 | `src/lib/limits.ts` | `getTier()`, `getLimits()`, `capExpiry()` — tier config |
 | `src/lib/validations.ts` | Shared Zod schemas |
 | `src/types/api.ts` | Shared TypeScript types for API responses |
@@ -84,7 +86,11 @@ Vectors are stored as JSON-encoded `number[]` strings. Parse with `JSON.parse()`
 | Method | Route | Description |
 |---|---|---|
 | `POST` | `/api/v1/agents` | Create agent, returns `fv_sk_` key once |
-| `POST` | `/api/v1/files` | Upload + optionally index file |
+| `GET` | `/api/v1/files` | List files (paginated, `indexed` filter) |
+| `POST` | `/api/v1/files` | Upload + optionally index file (rate limited: 20/min) |
+| `GET` | `/api/v1/files/[id]` | Single file metadata |
+| `DELETE` | `/api/v1/files/[id]` | Delete file + embeddings (cascade) + storage |
+| `POST` | `/api/v1/files/[id]/index` | Index existing file on demand |
 | `POST` | `/api/v1/search` | Semantic search over embeddings + memory |
 | `POST` | `/api/v1/memory` | Store a memory with embedding |
 | `GET` | `/api/v1/memory` | List memories (paginated) |

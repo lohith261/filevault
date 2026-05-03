@@ -36,7 +36,11 @@ Both products share the same database, storage layer (Cloudflare R2), and deploy
 7. [Agent API (v1)](#agent-api-v1)
    - [Authentication](#authentication)
    - [POST /v1/agents](#post-v1agents)
+   - [GET /v1/files](#get-v1files)
    - [POST /v1/files](#post-v1files)
+   - [GET /v1/files/:id](#get-v1filesid)
+   - [DELETE /v1/files/:id](#delete-v1filesid)
+   - [POST /v1/files/:id/index](#post-v1filesidindex)
    - [POST /v1/search](#post-v1search)
    - [POST /v1/memory](#post-v1memory)
    - [GET /v1/memory](#get-v1memory)
@@ -59,11 +63,15 @@ Both products share the same database, storage layer (Cloudflare R2), and deploy
                         │  GET  /s/[slug]/[...path]                    │
                         │  /dashboard                                   │
                         │                                               │
-  AI Agent ──────────► │  POST /v1/agents     (create agent)          │
-  (Bearer fv_sk_...)    │  POST /v1/files      (upload + index)        │
-                        │  POST /v1/search     (semantic search)        │
-                        │  POST /v1/memory     (store memory)          │
-                        │  GET  /v1/memory     (recall memory)         │
+  AI Agent ──────────► │  POST /v1/agents          (create agent)     │
+  (Bearer fv_sk_...)    │  GET  /v1/files           (list files)       │
+                        │  POST /v1/files           (upload + index)   │
+                        │  GET  /v1/files/:id       (file metadata)    │
+                        │  DELETE /v1/files/:id     (delete file)      │
+                        │  POST /v1/files/:id/index (index on demand)  │
+                        │  POST /v1/search          (semantic search)  │
+                        │  POST /v1/memory          (store memory)     │
+                        │  GET  /v1/memory          (recall memory)    │
                         └────────────┬────────────────┬───────────────┘
                                      │                │
                               Prisma (libsql)    Cloudflare R2
@@ -329,9 +337,44 @@ Create an agent and receive its API key.
 
 ---
 
+### GET /v1/files
+
+List the agent's uploaded files, newest first.
+
+**Query params:**
+
+| Param | Default | Description |
+|---|---|---|
+| `limit` | `20` | Max results (1–100) |
+| `cursor` | — | File ID for cursor-based pagination |
+| `indexed` | — | `true` or `false` to filter by index status |
+
+**Response `200`:**
+```json
+{
+  "files": [
+    {
+      "file_id": "clx...",
+      "name": "report.pdf",
+      "mime_type": "application/pdf",
+      "size_bytes": 204800,
+      "is_indexed": true,
+      "metadata": { "project": "q3" },
+      "url": "https://pub-xxx.r2.dev/agents/.../report.pdf",
+      "created_at": "2026-05-04T00:00:00.000Z"
+    }
+  ],
+  "next_cursor": "clx..."
+}
+```
+
+---
+
 ### POST /v1/files
 
 Upload a file. Optionally index it for semantic search.
+
+**Rate limit:** 20 uploads/minute per agent. Returns `429` with `Retry-After: 60` when exceeded.
 
 **Request:** `multipart/form-data`
 
@@ -341,24 +384,46 @@ Upload a file. Optionally index it for semantic search.
 | `metadata` | string | Optional JSON string — arbitrary key/value pairs |
 | `index` | string | `"true"` to extract text, chunk, embed, and store for search |
 
-**Response `201`:**
-```json
-{
-  "file_id": "clx...",
-  "name": "report.pdf",
-  "url": "https://pub-xxx.r2.dev/agents/.../report.pdf",
-  "mime_type": "application/pdf",
-  "size_bytes": 204800,
-  "indexed": true,
-  "created_at": "2026-05-04T00:00:00.000Z"
-}
-```
+**Response `201`:** Same shape as a single item from `GET /v1/files`.
 
 **Indexing pipeline** (when `index=true`):
 1. Extract text — HTML stripping, plain text, or PDF parse
 2. Chunk into 500-word windows with 100-word overlap
 3. Embed each chunk via `openai/text-embedding-3-small` (OpenRouter)
 4. Store chunk + vector in `embeddings` table
+
+---
+
+### GET /v1/files/:id
+
+Fetch metadata for a single file.
+
+**Response `200`:** Single file object (same shape as list item). Returns `404` if not found or not owned by agent.
+
+---
+
+### DELETE /v1/files/:id
+
+Delete a file, all its embeddings, and its storage object.
+
+**Response `204`** on success. Returns `404` if not found or not owned by agent.
+
+---
+
+### POST /v1/files/:id/index
+
+Index an already-uploaded file. Useful when `index=false` was used at upload time.
+
+**Response `200`:**
+```json
+{
+  "file_id": "clx...",
+  "indexed": true,
+  "chunks_created": 12
+}
+```
+
+Returns `{ "already_indexed": true }` if the file was already indexed.
 
 ---
 
@@ -522,10 +587,11 @@ Full schema: [`prisma/schema.prisma`](prisma/schema.prisma)
 
 ### Near-term (v0.2)
 
-- [ ] `GET /v1/files` — list agent's files with pagination
-- [ ] `DELETE /v1/files/:id` — delete a file and its embeddings
-- [ ] `POST /v1/files/:id/index` — index an already-uploaded file on demand
-- [ ] Per-agent rate limiting on v1 endpoints
+- [x] `GET /v1/files` — list agent's files with pagination + indexed filter
+- [x] `GET /v1/files/:id` — single file metadata
+- [x] `DELETE /v1/files/:id` — delete file, embeddings, and storage object
+- [x] `POST /v1/files/:id/index` — index an already-uploaded file on demand
+- [x] Per-agent rate limiting — 20 uploads/min, `Retry-After` header on 429
 - [ ] Agent dashboard UI — web interface to manage agents, browse files, run searches
 
 ### Mid-term (v0.3)
