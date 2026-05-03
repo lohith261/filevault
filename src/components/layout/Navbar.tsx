@@ -28,6 +28,9 @@ export function Navbar() {
           <Link href="/pricing">
             <Button variant="ghost" size="sm">Pricing</Button>
           </Link>
+          <Link href="/agents">
+            <Button variant="ghost" size="sm">Agents</Button>
+          </Link>
           <Link href="/help">
             <Button variant="ghost" size="sm">Help</Button>
           </Link>
