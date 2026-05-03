@@ -35,6 +35,7 @@ const isPublicRoute = createRouteMatcher([
   '/s/(.*)',
   '/api/upload',
   '/api/cron/(.*)',
+  '/api/domain',
 ])
 
 const clerkHandler = clerkMiddleware(async (auth, req) => {
@@ -43,7 +44,7 @@ const clerkHandler = clerkMiddleware(async (auth, req) => {
   }
 })
 
-export default function handler(req: NextRequest) {
+export default async function handler(req: NextRequest) {
   const host = req.headers.get('host') ?? ''
 
   // Rewrite subdomain requests to /s/[slug] before auth runs
@@ -53,6 +54,25 @@ export default function handler(req: NextRequest) {
       const url = req.nextUrl.clone()
       url.pathname = `/s/${subdomain}`
       return NextResponse.rewrite(url)
+    }
+  }
+
+  // Custom domain lookup — if the host is not the base domain or a subdomain of it
+  if (host !== BASE_DOMAIN && host !== `www.${BASE_DOMAIN}` && !host.endsWith(`.${BASE_DOMAIN}`)) {
+    try {
+      const lookupUrl = new URL('/api/domain', req.nextUrl.origin)
+      lookupUrl.searchParams.set('host', host)
+      const res = await fetch(lookupUrl.toString())
+      if (res.ok) {
+        const { slug } = await res.json() as { slug: string | null }
+        if (slug) {
+          const url = req.nextUrl.clone()
+          url.pathname = `/s/${slug}`
+          return NextResponse.rewrite(url)
+        }
+      }
+    } catch {
+      // fall through if lookup fails
     }
   }
 

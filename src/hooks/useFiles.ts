@@ -14,6 +14,7 @@ export interface SiteRecord {
   entryFile: string
   viewCount: number
   passwordHash: string | null
+  customDomain: string | null
 }
 
 interface FilesResponse {
@@ -79,6 +80,22 @@ export function useFiles(page = 1, search = '') {
     [mutate]
   )
 
+  const setCustomDomain = useCallback(
+    async (slug: string, customDomain: string | null): Promise<void> => {
+      const res = await fetch(`/api/files/${slug}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customDomain }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error ?? 'Failed to update domain.')
+      }
+      await mutate()
+    },
+    [mutate]
+  )
+
   return {
     sites: data?.sites ?? [],
     total: data?.total ?? 0,
@@ -88,5 +105,6 @@ export function useFiles(page = 1, search = '') {
     deleteFile,
     renameFile,
     updateFile,
+    setCustomDomain,
   }
 }

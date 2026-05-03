@@ -43,6 +43,7 @@ export async function GET(req: NextRequest) {
       ...s,
       totalSizeBytes: s.totalSizeBytes.toString(),
       viewCount: s._count.views,
+      customDomain: s.customDomain ?? null,
     })),
     total,
     page,

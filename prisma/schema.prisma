@@ -18,6 +18,7 @@ model Site {
   totalSizeBytes BigInt     @default(0)
   entryFile      String     @default("index.html")
   storagePrefix  String
+  customDomain   String?    @unique
   files          SiteFile[]
   views          SiteView[]
 

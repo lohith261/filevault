@@ -54,7 +54,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
   }
 
-  const { label, password, expiresAt } = parsed.data
+  const { label, password, expiresAt, customDomain } = parsed.data
   const updateData: Record<string, unknown> = {}
 
   if (label !== undefined) updateData.label = label
@@ -62,6 +62,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (password !== undefined) {
     updateData.passwordHash = password ? await hashPassword(password) : null
   }
+  if (customDomain !== undefined) updateData.customDomain = customDomain || null
 
   const updated = await prisma.site.update({
     where: { id: site.id },

@@ -18,6 +18,7 @@ export const UpdateSiteSchema = z.object({
   label: z.string().max(100).optional(),
   password: z.string().max(100).nullable().optional(),
   expiresAt: z.string().datetime().nullable().optional(),
+  customDomain: z.string().max(253).nullable().optional(),
 })
 
 export const ALLOWED_SINGLE_MIME_TYPES = new Set([

@@ -21,7 +21,7 @@ function useSafeAuth() {
 export default function DashboardPage() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
-  const { sites, total, isLoading, deleteFile, renameFile, updateFile } = useFiles(page, search)
+  const { sites, total, isLoading, deleteFile, renameFile, updateFile, setCustomDomain } = useFiles(page, search)
   const { has } = useSafeAuth()
   const isPro = has?.({ plan: 'user:pro' }) ?? false
 
@@ -63,6 +63,8 @@ export default function DashboardPage() {
         onDelete={deleteFile}
         onRename={renameFile}
         onUpdate={updateFile}
+        onSetDomain={setCustomDomain}
+        isPro={isPro}
       />
 
       {totalPages > 1 && (

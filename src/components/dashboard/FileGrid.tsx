@@ -13,9 +13,11 @@ interface FileGridProps {
   onDelete: (slug: string) => void
   onRename: (slug: string, label: string) => void
   onUpdate: (slug: string, file: File) => Promise<void>
+  onSetDomain: (slug: string, domain: string | null) => Promise<void>
+  isPro: boolean
 }
 
-export function FileGrid({ sites, isLoading, onDelete, onRename, onUpdate }: FileGridProps) {
+export function FileGrid({ sites, isLoading, onDelete, onRename, onUpdate, onSetDomain, isPro }: FileGridProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -61,7 +63,7 @@ export function FileGrid({ sites, isLoading, onDelete, onRename, onUpdate }: Fil
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <AnimatePresence mode="popLayout">
         {sites.map((site) => (
-          <FileCard key={site.slug} site={site} onDelete={onDelete} onRename={onRename} onUpdate={onUpdate} />
+          <FileCard key={site.slug} site={site} onDelete={onDelete} onRename={onRename} onUpdate={onUpdate} onSetDomain={onSetDomain} isPro={isPro} />
         ))}
       </AnimatePresence>
     </div>
