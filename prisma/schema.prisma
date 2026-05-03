@@ -64,3 +64,62 @@ model AnonUploadLog {
   @@index([ip, createdAt])
   @@map("anon_upload_logs")
 }
+
+// ── AI Agent system ──────────────────────────────────────────────────────────
+
+model Agent {
+  id         String      @id @default(cuid())
+  name       String?
+  apiKeyHash String      @unique
+  createdAt  DateTime    @default(now())
+  files      AgentFile[]
+  embeddings Embedding[]
+  memories   Memory[]
+
+  @@map("agents")
+}
+
+model AgentFile {
+  id         String      @id @default(cuid())
+  agentId    String
+  agent      Agent       @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  name       String
+  mimeType   String
+  sizeBytes  BigInt      @default(0)
+  storageKey String
+  metadata   String?
+  isIndexed  Boolean     @default(false)
+  createdAt  DateTime    @default(now())
+  embeddings Embedding[]
+
+  @@index([agentId])
+  @@map("agent_files")
+}
+
+model Embedding {
+  id        String     @id @default(cuid())
+  agentId   String
+  agent     Agent      @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  fileId    String?
+  file      AgentFile? @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  content   String
+  vector    String
+  createdAt DateTime   @default(now())
+
+  @@index([agentId])
+  @@index([fileId])
+  @@map("embeddings")
+}
+
+model Memory {
+  id        String    @id @default(cuid())
+  agentId   String
+  agent     Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  content   String
+  vector    String
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([agentId])
+  @@map("memories")
+}
