@@ -125,10 +125,7 @@ export class FileVault {
   }
 
   async deleteWebhook(): Promise<void> {
-    await fetch(`${this.baseUrl}/api/v1/webhooks`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${this.apiKey}` },
-    })
+    await this.request('DELETE', '/webhooks')
   }
 }
 

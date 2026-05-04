@@ -61,6 +61,11 @@ export async function POST(req: NextRequest) {
 
     if (!file) return NextResponse.json({ error: 'No file provided.' }, { status: 400 })
 
+    const MAX_FILE_SIZE = 50 * 1024 * 1024
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json({ error: 'File too large. Maximum size is 50 MB.' }, { status: 413 })
+    }
+
     let metadata: Record<string, unknown> | null = null
     if (metadataRaw) {
       try {

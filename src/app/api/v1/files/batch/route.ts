@@ -49,8 +49,14 @@ export async function POST(req: NextRequest) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? ''
   const results: { file_id: string; name: string; size_bytes: number; is_indexed: boolean; url: string; error?: string }[] = []
 
+  const MAX_FILE_SIZE = 50 * 1024 * 1024
+
   for (const file of rawFiles) {
     try {
+      if (file.size > MAX_FILE_SIZE) {
+        results.push({ file_id: '', name: file.name, size_bytes: file.size, is_indexed: false, url: '', error: 'File too large. Maximum size is 50 MB.' })
+        continue
+      }
       const buffer = Buffer.from(await file.arrayBuffer())
       const mimeType = getMimeType(file.name) || file.type || 'application/octet-stream'
       const slug = generateSlug()
