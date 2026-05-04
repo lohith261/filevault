@@ -7,6 +7,7 @@ import { generateSlug } from '@/lib/slug'
 import { indexFile } from '@/lib/indexing'
 import { checkUploadRateLimit } from '@/lib/rateLimit'
 import { fireWebhook } from '@/lib/webhook'
+import { checkFileCapacity, checkEmbeddingCapacity } from '@/lib/agentLimits'
 
 export const maxDuration = 60
 
@@ -61,6 +62,11 @@ export async function POST(req: NextRequest) {
 
     if (!file) return NextResponse.json({ error: 'No file provided.' }, { status: 400 })
 
+    const fileCap = await checkFileCapacity(agentId)
+    if (!fileCap.allowed) {
+      return NextResponse.json({ error: fileCap.reason }, { status: 429 })
+    }
+
     const MAX_FILE_SIZE = 50 * 1024 * 1024
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json({ error: 'File too large. Maximum size is 50 MB.' }, { status: 413 })
@@ -98,6 +104,10 @@ export async function POST(req: NextRequest) {
 
     let indexed = false
     if (shouldIndex) {
+      const embCap = await checkEmbeddingCapacity(agentId)
+      if (!embCap.allowed) {
+        return NextResponse.json({ error: embCap.reason }, { status: 429 })
+      }
       const result = await indexFile(agentId, agentFile.id, buffer, mimeType, file.name)
       indexed = result.indexed
       if (indexed) {

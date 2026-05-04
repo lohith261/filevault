@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { resolveAgent } from '@/lib/auth/apiKey'
 import { generateEmbedding } from '@/lib/embeddings'
+import { checkMemoryCapacity } from '@/lib/agentLimits'
 
 const StoreMemorySchema = z.object({
   content: z.string().min(1).max(10000),
@@ -26,6 +27,12 @@ export async function POST(req: NextRequest) {
     }
 
     const { content, ttl } = parsed.data
+
+    const memoryCap = await checkMemoryCapacity(agentId)
+    if (!memoryCap.allowed) {
+      return NextResponse.json({ error: memoryCap.reason }, { status: 429 })
+    }
+
     const vector = await generateEmbedding(content)
     const expiresAt = ttl ? new Date(Date.now() + ttl * 1000) : null
 
