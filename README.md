@@ -63,15 +63,18 @@ Both products share the same database, storage layer (Cloudflare R2), and deploy
                         │  GET  /s/[slug]/[...path]                    │
                         │  /dashboard                                   │
                         │                                               │
-  AI Agent ──────────► │  POST /v1/agents          (create agent)     │
-  (Bearer fv_sk_...)    │  GET  /v1/files           (list files)       │
-                        │  POST /v1/files           (upload + index)   │
-                        │  GET  /v1/files/:id       (file metadata)    │
-                        │  DELETE /v1/files/:id     (delete file)      │
-                        │  POST /v1/files/:id/index (index on demand)  │
-                        │  POST /v1/search          (semantic search)  │
-                        │  POST /v1/memory          (store memory)     │
-                        │  GET  /v1/memory          (recall memory)    │
+  AI Agent ──────────► │  POST /v1/agents             (create agent)  │
+  (Bearer fv_sk_...)    │  GET  /v1/files              (list files)    │
+                        │  POST /v1/files              (upload+index)  │
+                        │  POST /v1/files/batch        (batch upload)  │
+                        │  GET  /v1/files/:id          (file metadata) │
+                        │  DELETE /v1/files/:id        (delete file)   │
+                        │  POST /v1/files/:id/index    (index on demand│
+                        │  POST /v1/search             (semantic search│
+                        │  POST /v1/memory             (store memory)  │
+                        │  GET  /v1/memory             (recall memory) │
+                        │  GET  /v1/usage              (metrics)       │
+                        │  GET/PUT/DELETE /v1/webhooks (webhook config)│
                         └────────────┬────────────────┬───────────────┘
                                      │                │
                               Prisma (libsql)    Cloudflare R2
@@ -594,22 +597,22 @@ Full schema: [`prisma/schema.prisma`](prisma/schema.prisma)
 - [x] Per-agent rate limiting — 20 uploads/min, `Retry-After` header on 429
 - [x] Agent dashboard UI — `/agents` page with file management, semantic search, and memory
 
-### Mid-term (v0.3)
+### Mid-term (v0.3) ✅
 
-- [ ] **Usage metering** — track embedding token spend and API request counts per agent
-- [ ] **Webhook support** — POST to a URL when async indexing completes
-- [ ] **Metadata filtering** in search — filter by arbitrary JSON metadata fields
-- [ ] **Batch file upload** — upload multiple files in one request
-- [ ] **TypeScript SDK** — `npm install @filevault/sdk`
+- [x] **Usage metering** — `GET /v1/usage` returns file count, indexed count, storage bytes, memory count
+- [x] **Webhook support** — `PUT /v1/webhooks` registers a URL; fires on `file.created`, `file.deleted`, `memory.created`
+- [x] **Metadata filtering** in search — `filter.metadata: {key: value}` in `POST /v1/search`
+- [x] **Batch file upload** — `POST /v1/files/batch` accepts up to 10 files in one request
+- [x] **TypeScript SDK** — `src/sdk/index.ts` with full API coverage (`FileVault` class)
 
 ### Longer-term (v1.0)
 
-- [ ] **pgvector migration** — move from in-memory cosine similarity to Postgres pgvector for scale
-- [ ] **Python SDK** — `pip install filevault`
+- [x] **Python SDK** — `sdk/python/filevault.py` — zero-dependency client for Python 3.9+
+- [ ] **Collections** — group files into named collections for scoped search
 - [ ] **Agent-to-agent sharing** — grant another agent read access to your files/memory
 - [ ] **Streaming search** — stream results as embeddings are scored
 - [ ] **Re-ranking** — optional cross-encoder re-ranking pass for higher precision
-- [ ] **Collections** — group files into named collections for scoped search
+- [ ] **pgvector migration** — move from in-memory cosine similarity to Postgres pgvector for scale
 - [ ] **Billing for agent API** — usage-based pricing per 1K embeddings / searches
 
 ---
