@@ -6,6 +6,7 @@ import { getMimeType } from '@/lib/mime'
 import { generateSlug } from '@/lib/slug'
 import { indexFile } from '@/lib/indexing'
 import { checkUploadRateLimit } from '@/lib/rateLimit'
+import { fireWebhook } from '@/lib/webhook'
 
 export const maxDuration = 60
 
@@ -98,6 +99,11 @@ export async function POST(req: NextRequest) {
         await prisma.agentFile.update({ where: { id: agentFile.id }, data: { isIndexed: true } })
       }
     }
+
+    fireWebhook(agentId, {
+      event: 'file.created',
+      data: { file_id: agentFile.id, name: file.name, size_bytes: file.size, is_indexed: indexed },
+    })
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? ''
     return NextResponse.json(formatFile({ ...agentFile, isIndexed: indexed }, baseUrl), { status: 201 })

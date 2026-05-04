@@ -11,6 +11,7 @@ const SearchSchema = z.object({
     .object({
       file_id: z.string().optional(),
       type: z.enum(['files', 'memory', 'all']).optional(),
+      metadata: z.record(z.string(), z.unknown()).optional(),
     })
     .optional(),
   limit: z.number().int().min(1).max(20).default(5),
@@ -34,6 +35,7 @@ export async function POST(req: NextRequest) {
 
     const { query, filter, limit } = parsed.data
     const searchType = filter?.type ?? 'all'
+    const metadataFilter = filter?.metadata
 
     const queryVector = await generateEmbedding(query)
     const results: SearchResult[] = []
@@ -52,12 +54,25 @@ export async function POST(req: NextRequest) {
           content: true,
           vector: true,
           fileId: true,
-          file: { select: { name: true, storageKey: true } },
+          file: { select: { name: true, storageKey: true, metadata: true } },
         },
       })
 
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? ''
       for (const row of rows) {
+        // Apply metadata filter in-memory
+        if (metadataFilter && row.file?.metadata) {
+          try {
+            const fileMeta = JSON.parse(row.file.metadata) as Record<string, unknown>
+            const matches = Object.entries(metadataFilter).every(([k, v]) => fileMeta[k] === v)
+            if (!matches) continue
+          } catch {
+            continue
+          }
+        } else if (metadataFilter) {
+          continue
+        }
+
         const vec = JSON.parse(row.vector) as number[]
         const score = cosineSimilarity(queryVector, vec)
         const url = row.file?.storageKey.startsWith('https://')

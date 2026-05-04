@@ -44,6 +44,8 @@ node node_modules/next/dist/bin/next dev
 | `src/lib/search/similarity.ts` | `cosineSimilarity(a, b)`, `rankResults(results, topK)` |
 | `src/lib/indexing.ts` | `indexFile(agentId, fileId, buffer, mimeType, filename)` → `IndexResult`, `streamToBuffer(stream)` |
 | `src/lib/rateLimit.ts` | `checkUploadRateLimit(agentId)` → `{ allowed, retryAfterSeconds }` — 20 uploads/min |
+| `src/lib/webhook.ts` | `fireWebhook(agentId, payload)` — non-blocking POST to agent's webhookUrl |
+| `src/sdk/index.ts` | TypeScript SDK — `FileVault` class wrapping all v1 endpoints |
 | `src/hooks/useAgentFiles.ts` | SWR hook for v1/files — `deleteFile`, `indexFile`, `uploadFile` |
 | `src/hooks/useAgentMemory.ts` | SWR hook for v1/memory — `addMemory` |
 | `src/components/agents/` | `AgentSetup`, `AgentDashboard`, `AgentFileCard`, `AgentSearch`, `AgentMemory` |
@@ -63,7 +65,7 @@ node node_modules/next/dist/bin/next dev
 - `AnonUploadLog` — IP-based rate limiting for anonymous uploads
 
 **Agent system:**
-- `Agent` — API key identity (apiKeyHash, name)
+- `Agent` — API key identity (apiKeyHash, name, webhookUrl nullable)
 - `AgentFile` — file uploaded via agent API (agentId, storageKey, metadata JSON string, isIndexed)
 - `Embedding` — text chunk + vector (agentId, fileId nullable, content, vector as JSON string)
 - `Memory` — agent memory entry (agentId, content, vector as JSON string, expiresAt nullable)
@@ -95,9 +97,14 @@ Vectors are stored as JSON-encoded `number[]` strings. Parse with `JSON.parse()`
 | `GET` | `/api/v1/files/[id]` | Single file metadata |
 | `DELETE` | `/api/v1/files/[id]` | Delete file + embeddings (cascade) + storage |
 | `POST` | `/api/v1/files/[id]/index` | Index existing file on demand |
-| `POST` | `/api/v1/search` | Semantic search over embeddings + memory |
+| `POST` | `/api/v1/files/batch` | Upload up to 10 files at once (rate limited) |
+| `POST` | `/api/v1/search` | Semantic search with optional metadata filter |
 | `POST` | `/api/v1/memory` | Store a memory with embedding |
 | `GET` | `/api/v1/memory` | List memories (paginated) |
+| `GET` | `/api/v1/usage` | File count, indexed count, storage bytes, memory count |
+| `GET` | `/api/v1/webhooks` | Get webhook URL |
+| `PUT` | `/api/v1/webhooks` | Register/update webhook URL |
+| `DELETE` | `/api/v1/webhooks` | Remove webhook |
 
 ---
 

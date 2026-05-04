@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { resolveAgent } from '@/lib/auth/apiKey'
 import { storageDriver } from '@/lib/storage'
+import { fireWebhook } from '@/lib/webhook'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -46,6 +47,8 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   await storageDriver.deletePrefix(storagePrefix)
   // Cascade in schema deletes Embeddings automatically
   await prisma.agentFile.delete({ where: { id: file.id } })
+
+  fireWebhook(agentId, { event: 'file.deleted', data: { file_id: id } })
 
   return new NextResponse(null, { status: 204 })
 }
