@@ -12,6 +12,8 @@ const SearchSchema = z.object({
       file_id: z.string().optional(),
       type: z.enum(['files', 'memory', 'all']).optional(),
       metadata: z.record(z.string(), z.unknown()).optional(),
+      collection_id: z.string().optional(),
+      include_shared: z.boolean().optional(),
     })
     .optional(),
   limit: z.number().int().min(1).max(20).default(5),
@@ -36,15 +38,38 @@ export async function POST(req: NextRequest) {
     const { query, filter, limit } = parsed.data
     const searchType = filter?.type ?? 'all'
     const metadataFilter = filter?.metadata
+    const collectionId = filter?.collection_id
+    const includeShared = filter?.include_shared ?? false
 
     const queryVector = await generateEmbedding(query)
     const results: SearchResult[] = []
 
+    // Resolve which agentIds to search across (own + optionally shared-from agents)
+    const agentIds: string[] = [agentId]
+    if (includeShared && (searchType === 'all' || searchType === 'files')) {
+      const shares = await prisma.agentShare.findMany({
+        where: { granteeAgentId: agentId },
+        select: { ownerAgentId: true },
+      })
+      agentIds.push(...shares.map((s) => s.ownerAgentId))
+    }
+
+    // Resolve file IDs if filtering by collection
+    let collectionFileIds: string[] | null = null
+    if (collectionId) {
+      const cf = await prisma.collectionFile.findMany({
+        where: { collectionId, collection: { agentId } },
+        select: { fileId: true },
+      })
+      collectionFileIds = cf.map((r) => r.fileId)
+    }
+
     // Search file embeddings
     if (searchType === 'all' || searchType === 'files') {
-      const where = {
-        agentId,
+      const where: Record<string, unknown> = {
+        agentId: agentIds.length === 1 ? agentId : { in: agentIds },
         ...(filter?.file_id ? { fileId: filter.file_id } : {}),
+        ...(collectionFileIds ? { fileId: { in: collectionFileIds } } : {}),
       }
 
       const rows = await prisma.embedding.findMany({
@@ -54,6 +79,7 @@ export async function POST(req: NextRequest) {
           content: true,
           vector: true,
           fileId: true,
+          agentId: true,
           file: { select: { name: true, storageKey: true, metadata: true } },
         },
       })

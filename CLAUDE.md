@@ -69,6 +69,9 @@ node node_modules/next/dist/bin/next dev
 - `AgentFile` — file uploaded via agent API (agentId, storageKey, metadata JSON string, isIndexed)
 - `Embedding` — text chunk + vector (agentId, fileId nullable, content, vector as JSON string)
 - `Memory` — agent memory entry (agentId, content, vector as JSON string, expiresAt nullable)
+- `Collection` — named group of files belonging to an agent
+- `CollectionFile` — join table: (collectionId, fileId) composite PK
+- `AgentShare` — grants read access from ownerAgentId to granteeAgentId (unique pair)
 
 Vectors are stored as JSON-encoded `number[]` strings. Parse with `JSON.parse()`, serialize with `JSON.stringify()`.
 
@@ -98,13 +101,23 @@ Vectors are stored as JSON-encoded `number[]` strings. Parse with `JSON.parse()`
 | `DELETE` | `/api/v1/files/[id]` | Delete file + embeddings (cascade) + storage |
 | `POST` | `/api/v1/files/[id]/index` | Index existing file on demand |
 | `POST` | `/api/v1/files/batch` | Upload up to 10 files at once (rate limited) |
-| `POST` | `/api/v1/search` | Semantic search with optional metadata filter |
+| `POST` | `/api/v1/search` | Semantic search — filters: `file_id`, `type`, `metadata`, `collection_id`, `include_shared` |
 | `POST` | `/api/v1/memory` | Store a memory with embedding |
 | `GET` | `/api/v1/memory` | List memories (paginated) |
 | `GET` | `/api/v1/usage` | File count, indexed count, storage bytes, memory count |
 | `GET` | `/api/v1/webhooks` | Get webhook URL |
 | `PUT` | `/api/v1/webhooks` | Register/update webhook URL |
 | `DELETE` | `/api/v1/webhooks` | Remove webhook |
+| `GET` | `/api/v1/agents/me` | Current agent's id, name, created_at |
+| `GET` | `/api/v1/collections` | List collections with file counts |
+| `POST` | `/api/v1/collections` | Create a collection `{ name }` |
+| `GET` | `/api/v1/collections/[id]` | Get collection with its files |
+| `DELETE` | `/api/v1/collections/[id]` | Delete collection (files unaffected) |
+| `POST` | `/api/v1/collections/[id]/files` | Add file to collection `{ file_id }` |
+| `DELETE` | `/api/v1/collections/[id]/files/[fileId]` | Remove file from collection |
+| `GET` | `/api/v1/shares` | List shares given and received |
+| `POST` | `/api/v1/shares` | Grant read access to another agent `{ agent_id }` |
+| `DELETE` | `/api/v1/shares/[granteeId]` | Revoke a share |
 
 ---
 
