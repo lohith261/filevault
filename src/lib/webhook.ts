@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 export type WebhookEvent =
   | { event: 'file.created'; data: { file_id: string; name: string; size_bytes: number; is_indexed: boolean } }
@@ -31,7 +32,10 @@ function isPrivateUrl(rawUrl: string): boolean {
 export async function fireWebhook(agentId: string, payload: WebhookEvent): Promise<void> {
   const agent = await prisma.agent.findUnique({ where: { id: agentId }, select: { webhookUrl: true } })
   if (!agent?.webhookUrl) return
-  if (isPrivateUrl(agent.webhookUrl)) return
+  if (isPrivateUrl(agent.webhookUrl)) {
+    logger.warn('webhook blocked: private url', { agentId, url: agent.webhookUrl })
+    return
+  }
 
   try {
     await fetch(agent.webhookUrl, {
@@ -40,7 +44,8 @@ export async function fireWebhook(agentId: string, payload: WebhookEvent): Promi
       body: JSON.stringify({ ...payload, timestamp: new Date().toISOString() }),
       signal: AbortSignal.timeout(5000),
     })
-  } catch {
-    // Non-blocking — webhook failures are silent
+    logger.info('webhook fired', { agentId, event: payload.event })
+  } catch (err) {
+    logger.warn('webhook delivery failed', { agentId, event: payload.event, error: String(err) })
   }
 }

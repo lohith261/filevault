@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { generateEmbedding } from '@/lib/embeddings'
 import { chunkText } from '@/lib/chunking'
 import { extractText } from '@/lib/extractors'
+import { logger } from '@/lib/logger'
 
 export interface IndexResult {
   indexed: boolean
@@ -31,6 +32,7 @@ export async function indexFile(
     })
   )
 
+  logger.info('file indexed', { agentId, fileId, chunks: chunks.length })
   return { indexed: true, chunksCreated: chunks.length }
 }
 
