@@ -1,4 +1,5 @@
 export function cosineSimilarity(a: number[], b: number[]): number {
+  if (a.length !== b.length) return 0
   let dot = 0
   let magA = 0
   let magB = 0

@@ -30,20 +30,33 @@ export async function extractText(
   return null
 }
 
+const HTML_ENTITIES: Record<string, string> = {
+  nbsp: ' ', amp: '&', lt: '<', gt: '>', quot: '"', apos: "'",
+  mdash: '—', ndash: '–', lsquo: '‘', rsquo: '’',
+  ldquo: '“', rdquo: '”', hellip: '…', copy: '©',
+  reg: '®', trade: '™', euro: '€', pound: '£', yen: '¥',
+}
+
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&([a-z]+);/gi, (_, name) => HTML_ENTITIES[name.toLowerCase()] ?? '')
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#([0-9]+);/g, (_, dec) => String.fromCodePoint(parseInt(dec, 10)))
+}
+
 function extractHtml(html: string): string {
-  return html
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<!--[\s\S]*?-->/g, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\s{2,}/g, ' ')
-    .trim()
+  return decodeEntities(
+    html
+      .replace(/<!(DOCTYPE|doctype)[^>]*>/g, '')
+      .replace(/<!\[CDATA\[[\s\S]*?\]\]>/g, ' ')
+      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<!--[\s\S]*?-->/g, ' ')
+      // Self-closing and regular tags — tolerate `>` inside quoted attributes
+      .replace(/<[a-z/][^"'>]*(?:"[^"]*"[^"'>]*|'[^']*'[^"'>]*)*\/?>/gi, ' ')
+      .replace(/\s{2,}/g, ' ')
+      .trim()
+  )
 }
 
 async function extractPdf(buffer: Buffer): Promise<string | null> {
