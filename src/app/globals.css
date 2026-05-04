@@ -1,20 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f9f8f6;
-  --foreground: #111110;
+  --background: #f6f6f6;
+  --foreground: #0f0f0f;
   --card: #ffffff;
-  --card-foreground: #111110;
-  --border: #e5e1db;
-  --input: #e5e1db;
-  --primary: #1a56db;
+  --card-foreground: #0f0f0f;
+  --border: #e5e5e5;
+  --input: #e5e5e5;
+  --primary: #0f0f0f;
   --primary-foreground: #ffffff;
-  --secondary: #f3f0ea;
-  --secondary-foreground: #111110;
-  --muted: #f3f0ea;
-  --muted-foreground: #736e68;
-  --accent: #f3f0ea;
-  --accent-foreground: #111110;
+  --secondary: #f2f2f2;
+  --secondary-foreground: #0f0f0f;
+  --muted: #f2f2f2;
+  --muted-foreground: #737373;
+  --accent: #f2f2f2;
+  --accent-foreground: #0f0f0f;
   --destructive: #dc2626;
   --success: #15803d;
   --radius: 0.5rem;
@@ -58,7 +58,7 @@ html {
 }
 
 .hero-glow {
-  background: radial-gradient(ellipse 80% 70% at 65% 45%, rgba(26, 86, 219, 0.06) 0%, transparent 65%);
+  background: transparent;
 }
 
 ::-webkit-scrollbar {

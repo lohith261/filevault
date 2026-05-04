@@ -46,7 +46,7 @@ export function AgentFileCard({ file, onDelete, onIndex }: AgentFileCardProps) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: deleting ? 0.4 : 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="group relative rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 transition-shadow hover:shadow-md hover:shadow-black/5 hover:-translate-y-0.5"
+      className="group relative rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 transition-colors hover:border-[var(--foreground)]/20"
     >
       {/* Header */}
       <div className="mb-3 flex items-start gap-3">

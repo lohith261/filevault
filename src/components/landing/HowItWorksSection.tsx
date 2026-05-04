@@ -53,7 +53,7 @@ export function HowItWorksSection() {
                 {step.step}
               </span>
               <div className="relative pt-8">
-                <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--primary)] text-xs font-bold text-white">
+                <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--card)] text-xs font-bold text-[var(--foreground)]">
                   {i + 1}
                 </div>
                 <h3 className="text-lg font-semibold text-[var(--foreground)]">{step.title}</h3>

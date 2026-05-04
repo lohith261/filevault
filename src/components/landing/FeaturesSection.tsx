@@ -90,9 +90,9 @@ export function FeaturesSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.4 }}
-          className="mb-4 rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 flex flex-col sm:flex-row sm:items-center gap-6 hover:shadow-md hover:shadow-black/[0.06] transition-shadow duration-200"
+          className="mb-4 rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 flex flex-col sm:flex-row sm:items-center gap-6 hover:border-[var(--foreground)]/20 transition-colors duration-200"
         >
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[var(--primary)]/8 text-[var(--primary)]">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--muted)] text-[var(--foreground)]">
             {featured.icon}
           </div>
           <div>
@@ -100,7 +100,7 @@ export function FeaturesSection() {
             <p className="mt-1.5 text-[var(--muted-foreground)] leading-relaxed max-w-xl">{featured.description}</p>
           </div>
           <div className="sm:ml-auto shrink-0">
-            <span className="rounded-full bg-[var(--primary)]/8 px-3 py-1 text-xs font-semibold text-[var(--primary)]">
+            <span className="rounded-full border border-[var(--border)] bg-[var(--muted)] px-3 py-1 text-xs font-medium text-[var(--muted-foreground)]">
               Under 3 seconds
             </span>
           </div>
@@ -115,9 +115,9 @@ export function FeaturesSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.06 }}
-              className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 hover:shadow-md hover:shadow-black/[0.07] hover:-translate-y-0.5 transition-all duration-200"
+              className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 hover:border-[var(--foreground)]/20 transition-colors duration-200"
             >
-              <div className="mb-3 text-[var(--primary)]">
+              <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--muted)] text-[var(--foreground)]">
                 {feature.icon}
               </div>
               <h3 className="font-semibold text-[var(--foreground)]">{feature.title}</h3>
