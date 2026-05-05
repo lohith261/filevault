@@ -18,9 +18,19 @@ fi
 
 echo "[deploy] DATABASE_URL is PostgreSQL ✓"
 
+# For migrations, Prisma uses DIRECT_URL if available (direct Supabase connection)
+# otherwise falls back to DATABASE_URL
+MIGRATION_URL="${DIRECT_URL:-$DATABASE_URL}"
+if [ -n "$DIRECT_URL" ]; then
+  echo "[deploy] Using DIRECT_URL for migrations (direct connection) ✓"
+else
+  echo "[deploy] WARNING: DIRECT_URL not set — using DATABASE_URL for migrations"
+  echo "[deploy]          If using Supabase, set DIRECT_URL to the direct port 5432 connection"
+fi
+
 # Run Prisma migrations (no timeout — migrations need time)
 echo "[deploy] Running Prisma migrations..."
-if npx prisma migrate deploy; then
+if npx prisma migrate deploy --skip-generate; then
   echo "[deploy] Migrations completed ✓"
 else
   echo "[deploy] ERROR: Migration failed!"
