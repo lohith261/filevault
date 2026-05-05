@@ -5,7 +5,7 @@
     "buildCommand": "npx prisma generate && npm run build"
   },
   "deploy": {
-    "startCommand": "timeout 15 npx prisma migrate deploy || true; npm start",
+    "startCommand": "timeout 15 node node_modules/.bin/prisma migrate deploy || true; node node_modules/next/dist/bin/next start",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10,
     "healthcheckPath": "/api/health",
