@@ -19,6 +19,11 @@ function createPrismaClient() {
   })
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient()
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+// Lazy proxy — defers client creation until first use so DATABASE_URL is not
+// required at build time (Next.js imports modules during static page collection).
+export const prisma: PrismaClient = new Proxy({} as PrismaClient, {
+  get(_, prop) {
+    const client = globalForPrisma.prisma ?? (globalForPrisma.prisma = createPrismaClient())
+    return (client as unknown as Record<string | symbol, unknown>)[prop]
+  },
+})
