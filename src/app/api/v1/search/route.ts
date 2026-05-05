@@ -73,7 +73,10 @@ export async function POST(req: NextRequest) {
       }
 
       const rows = await prisma.embedding.findMany({
-        where,
+        where: {
+          ...where,
+          file: { indexStatus: 'indexed' },
+        },
         select: {
           id: true,
           content: true,

@@ -20,10 +20,17 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'State not found.' }, { status: 404 })
   }
 
+  let parsedData: Record<string, unknown>
+  try {
+    parsedData = JSON.parse(state.data)
+  } catch {
+    return NextResponse.json({ error: 'Corrupted state data.' }, { status: 500 })
+  }
+
   return NextResponse.json({
     state_id: state.id,
     key: state.key,
-    data: JSON.parse(state.data),
+    data: parsedData,
     created_at: state.createdAt,
     updated_at: state.updatedAt,
   })

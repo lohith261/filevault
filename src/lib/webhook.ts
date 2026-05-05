@@ -19,7 +19,7 @@ const PRIVATE_IP_PATTERNS = [
   /^fe80:/i,
 ]
 
-function isPrivateUrl(rawUrl: string): boolean {
+export function isPrivateUrl(rawUrl: string): boolean {
   try {
     const { hostname } = new URL(rawUrl)
     if (hostname === 'localhost') return true

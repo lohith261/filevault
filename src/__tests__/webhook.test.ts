@@ -9,7 +9,7 @@ vi.mock('@/lib/prisma', () => ({
 }))
 
 import { prisma } from '@/lib/prisma'
-import { fireWebhook } from '@/lib/webhook'
+import { fireWebhook, isPrivateUrl } from '@/lib/webhook'
 
 const mockFindUnique = vi.mocked(prisma.agent.findUnique)
 
@@ -54,5 +54,23 @@ describe('fireWebhook — SSRF protection', () => {
     await expect(
       fireWebhook('agent1', { event: 'file.deleted', data: { file_id: 'f1' } })
     ).resolves.toBeUndefined()
+  })
+})
+
+describe('isPrivateUrl', () => {
+  it('blocks localhost', () => {
+    expect(isPrivateUrl('http://localhost/hook')).toBe(true)
+  })
+
+  it('blocks 127.0.0.1', () => {
+    expect(isPrivateUrl('http://127.0.0.1/hook')).toBe(true)
+  })
+
+  it('blocks 169.254.169.254', () => {
+    expect(isPrivateUrl('http://169.254.169.254/latest/meta-data/')).toBe(true)
+  })
+
+  it('allows public URLs', () => {
+    expect(isPrivateUrl('https://example.com/hook')).toBe(false)
   })
 })

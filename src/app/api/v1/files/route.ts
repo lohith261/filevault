@@ -4,10 +4,11 @@ import { resolveAgent } from '@/lib/auth/apiKey'
 import { storageDriver } from '@/lib/storage'
 import { getMimeType } from '@/lib/mime'
 import { generateSlug } from '@/lib/slug'
-import { indexFile } from '@/lib/indexing'
+import { runIndexingJob } from '@/lib/indexing'
+import { after } from 'next/server'
 import { checkUploadRateLimit } from '@/lib/rateLimit'
 import { fireWebhook } from '@/lib/webhook'
-import { checkFileCapacity, checkEmbeddingCapacity } from '@/lib/agentLimits'
+import { checkFileCapacity } from '@/lib/agentLimits'
 
 export const maxDuration = 60
 
@@ -104,24 +105,24 @@ export async function POST(req: NextRequest) {
 
     let indexed = false
     if (shouldIndex) {
-      const embCap = await checkEmbeddingCapacity(agentId)
-      if (!embCap.allowed) {
-        return NextResponse.json({ error: embCap.reason }, { status: 429 })
-      }
-      const result = await indexFile(agentId, agentFile.id, buffer, mimeType, file.name)
-      indexed = result.indexed
-      if (indexed) {
-        await prisma.agentFile.update({ where: { id: agentFile.id }, data: { isIndexed: true } })
-      }
+      await prisma.agentFile.update({
+        where: { id: agentFile.id },
+        data: { indexStatus: 'pending' },
+      })
+      after(async () => {
+        await runIndexingJob(agentId, agentFile.id, buffer, mimeType, file.name)
+      })
     }
+
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? ''
+    const fileRecord = formatFile(agentFile, baseUrl)
 
     fireWebhook(agentId, {
       event: 'file.created',
       data: { file_id: agentFile.id, name: file.name, size_bytes: file.size, is_indexed: indexed },
     })
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? ''
-    return NextResponse.json(formatFile({ ...agentFile, isIndexed: indexed }, baseUrl), { status: 201 })
+    return NextResponse.json(fileRecord, { status: 201 })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Upload failed.'
     return NextResponse.json({ error: message }, { status: 500 })

@@ -8,16 +8,18 @@ vi.mock('@/lib/prisma', () => ({
     },
     embedding: { count: vi.fn() },
     memory: { count: vi.fn() },
+    agentState: { count: vi.fn() },
   },
 }))
 
 import { prisma } from '@/lib/prisma'
-import { checkFileCapacity, checkEmbeddingCapacity, checkMemoryCapacity } from '@/lib/agentLimits'
+import { checkFileCapacity, checkEmbeddingCapacity, checkMemoryCapacity, checkStateCapacity } from '@/lib/agentLimits'
 
 const mockFileCount = vi.mocked(prisma.agentFile.count)
 const mockFileAgg = vi.mocked(prisma.agentFile.aggregate)
 const mockEmbCount = vi.mocked(prisma.embedding.count)
 const mockMemCount = vi.mocked(prisma.memory.count)
+const mockStateCount = vi.mocked(prisma.agentState.count)
 
 beforeEach(() => vi.clearAllMocks())
 
@@ -70,5 +72,19 @@ describe('checkMemoryCapacity', () => {
     const result = await checkMemoryCapacity('a')
     expect(result.allowed).toBe(false)
     expect(result.reason).toMatch(/5,?000/)
+  })
+})
+
+describe('checkStateCapacity', () => {
+  it('allows when under cap', async () => {
+    mockStateCount.mockResolvedValue(0)
+    expect((await checkStateCapacity('a')).allowed).toBe(true)
+  })
+
+  it('blocks at 1000', async () => {
+    mockStateCount.mockResolvedValue(1000)
+    const result = await checkStateCapacity('a')
+    expect(result.allowed).toBe(false)
+    expect(result.reason).toMatch(/1,?000/)
   })
 })

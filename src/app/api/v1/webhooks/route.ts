@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { resolveAgent } from '@/lib/auth/apiKey'
+import { isPrivateUrl } from '@/lib/webhook'
 
 const RegisterSchema = z.object({
   url: z.string().url(),
@@ -24,6 +25,10 @@ export async function PUT(req: NextRequest) {
   const body = await req.json().catch(() => null)
   const parsed = RegisterSchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
+
+  if (isPrivateUrl(parsed.data.url)) {
+    return NextResponse.json({ error: 'Private or loopback URLs are not allowed.' }, { status: 400 })
+  }
 
   await prisma.agent.update({ where: { id: agentId }, data: { webhookUrl: parsed.data.url } })
   return NextResponse.json({ webhook_url: parsed.data.url })

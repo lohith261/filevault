@@ -4,10 +4,11 @@ import { resolveAgent } from '@/lib/auth/apiKey'
 import { storageDriver } from '@/lib/storage'
 import { getMimeType } from '@/lib/mime'
 import { generateSlug } from '@/lib/slug'
-import { indexFile } from '@/lib/indexing'
+import { runIndexingJob } from '@/lib/indexing'
+import { after } from 'next/server'
 import { checkUploadRateLimit } from '@/lib/rateLimit'
 import { fireWebhook } from '@/lib/webhook'
-import { checkFileCapacity, checkEmbeddingCapacity } from '@/lib/agentLimits'
+import { checkFileCapacity } from '@/lib/agentLimits'
 
 export const maxDuration = 120
 
@@ -86,14 +87,13 @@ export async function POST(req: NextRequest) {
 
       let indexed = false
       if (shouldIndex) {
-        const embCap = await checkEmbeddingCapacity(agentId)
-        if (!embCap.allowed) {
-          results.push({ file_id: agentFile.id, name: file.name, size_bytes: file.size, is_indexed: false, url: storageKey.startsWith('https://') ? storageKey : `${baseUrl}/v1/files/${agentFile.id}`, error: embCap.reason })
-          continue
-        }
-        const result = await indexFile(agentId, agentFile.id, buffer, mimeType, file.name)
-        indexed = result.indexed
-        if (indexed) await prisma.agentFile.update({ where: { id: agentFile.id }, data: { isIndexed: true } })
+        await prisma.agentFile.update({
+          where: { id: agentFile.id },
+          data: { indexStatus: 'pending' },
+        })
+        after(async () => {
+          await runIndexingJob(agentId, agentFile.id, buffer, mimeType, file.name)
+        })
       }
 
       fireWebhook(agentId, {

@@ -94,6 +94,7 @@ model AgentFile {
   storageKey      String
   metadata        String?
   isIndexed       Boolean          @default(false)
+  indexStatus     String           @default("not_indexed")
   createdAt       DateTime         @default(now())
   embeddings      Embedding[]
   collectionFiles CollectionFile[]
