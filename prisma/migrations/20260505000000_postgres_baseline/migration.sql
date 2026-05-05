@@ -5,7 +5,7 @@ CREATE SCHEMA IF NOT EXISTS "public";
 
 CREATE EXTENSION IF NOT EXISTS "vector" WITH SCHEMA "public";
 
-CREATE TABLE "sites" (
+CREATE TABLE IF NOT EXISTS "sites" (
     "id" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "label" TEXT NOT NULL DEFAULT '',
@@ -22,7 +22,7 @@ CREATE TABLE "sites" (
     CONSTRAINT "sites_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "site_files" (
+CREATE TABLE IF NOT EXISTS "site_files" (
     "id" TEXT NOT NULL,
     "siteId" TEXT NOT NULL,
     "path" TEXT NOT NULL,
@@ -34,7 +34,7 @@ CREATE TABLE "site_files" (
     CONSTRAINT "site_files_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "site_views" (
+CREATE TABLE IF NOT EXISTS "site_views" (
     "id" TEXT NOT NULL,
     "siteId" TEXT NOT NULL,
     "ip" TEXT,
@@ -44,7 +44,7 @@ CREATE TABLE "site_views" (
     CONSTRAINT "site_views_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "anon_upload_logs" (
+CREATE TABLE IF NOT EXISTS "anon_upload_logs" (
     "id" TEXT NOT NULL,
     "ip" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -52,7 +52,7 @@ CREATE TABLE "anon_upload_logs" (
     CONSTRAINT "anon_upload_logs_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "agents" (
+CREATE TABLE IF NOT EXISTS "agents" (
     "id" TEXT NOT NULL,
     "name" TEXT,
     "apiKeyHash" TEXT NOT NULL,
@@ -62,7 +62,7 @@ CREATE TABLE "agents" (
     CONSTRAINT "agents_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "agent_files" (
+CREATE TABLE IF NOT EXISTS "agent_files" (
     "id" TEXT NOT NULL,
     "agentId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -77,7 +77,7 @@ CREATE TABLE "agent_files" (
     CONSTRAINT "agent_files_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "collections" (
+CREATE TABLE IF NOT EXISTS "collections" (
     "id" TEXT NOT NULL,
     "agentId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -86,7 +86,7 @@ CREATE TABLE "collections" (
     CONSTRAINT "collections_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "collection_files" (
+CREATE TABLE IF NOT EXISTS "collection_files" (
     "collectionId" TEXT NOT NULL,
     "fileId" TEXT NOT NULL,
     "addedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -94,7 +94,7 @@ CREATE TABLE "collection_files" (
     CONSTRAINT "collection_files_pkey" PRIMARY KEY ("collectionId","fileId")
 );
 
-CREATE TABLE "agent_shares" (
+CREATE TABLE IF NOT EXISTS "agent_shares" (
     "id" TEXT NOT NULL,
     "ownerAgentId" TEXT NOT NULL,
     "granteeAgentId" TEXT NOT NULL,
@@ -103,7 +103,7 @@ CREATE TABLE "agent_shares" (
     CONSTRAINT "agent_shares_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "embeddings" (
+CREATE TABLE IF NOT EXISTS "embeddings" (
     "id" TEXT NOT NULL,
     "agentId" TEXT NOT NULL,
     "fileId" TEXT,
@@ -114,7 +114,7 @@ CREATE TABLE "embeddings" (
     CONSTRAINT "embeddings_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "memories" (
+CREATE TABLE IF NOT EXISTS "memories" (
     "id" TEXT NOT NULL,
     "agentId" TEXT NOT NULL,
     "content" TEXT NOT NULL,
@@ -125,7 +125,7 @@ CREATE TABLE "memories" (
     CONSTRAINT "memories_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "agent_states" (
+CREATE TABLE IF NOT EXISTS "agent_states" (
     "id" TEXT NOT NULL,
     "agentId" TEXT NOT NULL,
     "key" TEXT NOT NULL,
@@ -136,29 +136,29 @@ CREATE TABLE "agent_states" (
     CONSTRAINT "agent_states_pkey" PRIMARY KEY ("id")
 );
 
-CREATE UNIQUE INDEX "sites_slug_key" ON "sites"("slug");
-CREATE UNIQUE INDEX "sites_customDomain_key" ON "sites"("customDomain");
-CREATE INDEX "sites_userId_idx" ON "sites"("userId");
-CREATE INDEX "sites_expiresAt_idx" ON "sites"("expiresAt");
-CREATE INDEX "sites_createdAt_idx" ON "sites"("createdAt");
-CREATE INDEX "site_files_siteId_idx" ON "site_files"("siteId");
-CREATE UNIQUE INDEX "site_files_siteId_path_key" ON "site_files"("siteId", "path");
-CREATE INDEX "site_views_siteId_idx" ON "site_views"("siteId");
-CREATE INDEX "site_views_siteId_viewedAt_idx" ON "site_views"("siteId", "viewedAt");
-CREATE INDEX "anon_upload_logs_ip_createdAt_idx" ON "anon_upload_logs"("ip", "createdAt");
-CREATE UNIQUE INDEX "agents_apiKeyHash_key" ON "agents"("apiKeyHash");
-CREATE INDEX "agent_files_agentId_idx" ON "agent_files"("agentId");
-CREATE INDEX "collections_agentId_idx" ON "collections"("agentId");
-CREATE INDEX "agent_shares_granteeAgentId_idx" ON "agent_shares"("granteeAgentId");
-CREATE UNIQUE INDEX "agent_shares_ownerAgentId_granteeAgentId_key" ON "agent_shares"("ownerAgentId", "granteeAgentId");
-CREATE INDEX "embeddings_agentId_idx" ON "embeddings"("agentId");
-CREATE INDEX "embeddings_fileId_idx" ON "embeddings"("fileId");
-CREATE INDEX "memories_agentId_idx" ON "memories"("agentId");
-CREATE INDEX "agent_states_agentId_key_idx" ON "agent_states"("agentId", "key");
+CREATE UNIQUE INDEX IF NOT EXISTS "sites_slug_key" ON "sites"("slug");
+CREATE UNIQUE INDEX IF NOT EXISTS "sites_customDomain_key" ON "sites"("customDomain");
+CREATE INDEX IF NOT EXISTS "sites_userId_idx" ON "sites"("userId");
+CREATE INDEX IF NOT EXISTS "sites_expiresAt_idx" ON "sites"("expiresAt");
+CREATE INDEX IF NOT EXISTS "sites_createdAt_idx" ON "sites"("createdAt");
+CREATE INDEX IF NOT EXISTS "site_files_siteId_idx" ON "site_files"("siteId");
+CREATE UNIQUE INDEX IF NOT EXISTS "site_files_siteId_path_key" ON "site_files"("siteId", "path");
+CREATE INDEX IF NOT EXISTS "site_views_siteId_idx" ON "site_views"("siteId");
+CREATE INDEX IF NOT EXISTS "site_views_siteId_viewedAt_idx" ON "site_views"("siteId", "viewedAt");
+CREATE INDEX IF NOT EXISTS "anon_upload_logs_ip_createdAt_idx" ON "anon_upload_logs"("ip", "createdAt");
+CREATE UNIQUE INDEX IF NOT EXISTS "agents_apiKeyHash_key" ON "agents"("apiKeyHash");
+CREATE INDEX IF NOT EXISTS "agent_files_agentId_idx" ON "agent_files"("agentId");
+CREATE INDEX IF NOT EXISTS "collections_agentId_idx" ON "collections"("agentId");
+CREATE INDEX IF NOT EXISTS "agent_shares_granteeAgentId_idx" ON "agent_shares"("granteeAgentId");
+CREATE UNIQUE INDEX IF NOT EXISTS "agent_shares_ownerAgentId_granteeAgentId_key" ON "agent_shares"("ownerAgentId", "granteeAgentId");
+CREATE INDEX IF NOT EXISTS "embeddings_agentId_idx" ON "embeddings"("agentId");
+CREATE INDEX IF NOT EXISTS "embeddings_fileId_idx" ON "embeddings"("fileId");
+CREATE INDEX IF NOT EXISTS "memories_agentId_idx" ON "memories"("agentId");
+CREATE INDEX IF NOT EXISTS "agent_states_agentId_key_idx" ON "agent_states"("agentId", "key");
 
 -- pgvector HNSW indexes for fast approximate nearest-neighbor search
-CREATE INDEX "embeddings_vector_hnsw_idx" ON "embeddings" USING hnsw ("vector" vector_cosine_ops) WITH (m = 16, ef_construction = 64);
-CREATE INDEX "memories_vector_hnsw_idx" ON "memories" USING hnsw ("vector" vector_cosine_ops) WITH (m = 16, ef_construction = 64);
+CREATE INDEX IF NOT EXISTS "embeddings_vector_hnsw_idx" ON "embeddings" USING hnsw ("vector" vector_cosine_ops) WITH (m = 16, ef_construction = 64);
+CREATE INDEX IF NOT EXISTS "memories_vector_hnsw_idx" ON "memories" USING hnsw ("vector" vector_cosine_ops) WITH (m = 16, ef_construction = 64);
 
 ALTER TABLE "site_files" ADD CONSTRAINT "site_files_siteId_fkey" FOREIGN KEY ("siteId") REFERENCES "sites"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "site_views" ADD CONSTRAINT "site_views_siteId_fkey" FOREIGN KEY ("siteId") REFERENCES "sites"("id") ON DELETE CASCADE ON UPDATE CASCADE;
