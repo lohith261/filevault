@@ -79,6 +79,7 @@ model Agent {
   collections     Collection[]
   sharesGiven     AgentShare[]  @relation("SharesGiven")
   sharesReceived  AgentShare[]  @relation("SharesReceived")
+  states          AgentState[]
 
   @@map("agents")
 }
@@ -163,4 +164,17 @@ model Memory {
 
   @@index([agentId])
   @@map("memories")
+}
+
+model AgentState {
+  id        String   @id @default(cuid())
+  agentId   String
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  key       String
+  data      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([agentId, key])
+  @@map("agent_states")
 }

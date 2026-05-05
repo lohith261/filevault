@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   const agentId = await resolveAgent(req.headers.get('authorization'))
   if (!agentId) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
 
-  const [files, embeddings, memories] = await Promise.all([
+  const [files, embeddings, memories, states] = await Promise.all([
     prisma.agentFile.findMany({
       where: { agentId },
       select: { sizeBytes: true, isIndexed: true },
@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
         OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
       },
     }),
+    prisma.agentState.count({ where: { agentId } }),
   ])
 
   const storageBytes = files.reduce((sum, f) => sum + Number(f.sizeBytes), 0)
@@ -32,5 +33,6 @@ export async function GET(req: NextRequest) {
     },
     embeddings: { count: embeddings },
     memory: { count: memories },
+    states: { count: states },
   })
 }

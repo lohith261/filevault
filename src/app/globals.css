@@ -1,23 +1,44 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f6f6f6;
-  --foreground: #0f0f0f;
+  /* Brand — Indigo/Violet AI identity */
+  --brand: #6366f1;
+  --brand-foreground: #ffffff;
+  --brand-muted: #e0e7ff;
+  --brand-glow: rgba(99, 102, 241, 0.35);
+  --brand-secondary: #a855f7;
+
+  /* Base */
+  --background: #fafafa;
+  --foreground: #0b0b10;
   --card: #ffffff;
-  --card-foreground: #0f0f0f;
-  --border: #e5e5e5;
-  --input: #e5e5e5;
-  --primary: #0f0f0f;
+  --card-foreground: #0b0b10;
+
+  /* Surface */
+  --muted: #f2f2f6;
+  --muted-foreground: #6b7280;
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+
+  /* Accent */
+  --accent: #f3f4f6;
+  --accent-foreground: #0b0b10;
+  --primary: #0b0b10;
   --primary-foreground: #ffffff;
-  --secondary: #f2f2f2;
-  --secondary-foreground: #0f0f0f;
-  --muted: #f2f2f2;
-  --muted-foreground: #737373;
-  --accent: #f2f2f2;
-  --accent-foreground: #0f0f0f;
-  --destructive: #dc2626;
-  --success: #15803d;
-  --radius: 0.5rem;
+  --secondary: #f3f4f6;
+  --secondary-foreground: #0b0b10;
+
+  /* Semantic */
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --success: #10b981;
+  --success-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #ffffff;
+  --info: #06b6d4;
+  --info-foreground: #ffffff;
+
+  --radius: 0.75rem;
 }
 
 @theme inline {
@@ -34,8 +55,34 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-destructive: var(--destructive);
   --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-muted: var(--brand-muted);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
+
+.dark {
+  --background: #05050a;
+  --foreground: #f3f4f6;
+  --card: rgba(255, 255, 255, 0.03);
+  --card-foreground: #f3f4f6;
+  --muted: rgba(255, 255, 255, 0.05);
+  --muted-foreground: #9ca3af;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.08);
+  --accent: rgba(255, 255, 255, 0.05);
+  --accent-foreground: #f3f4f6;
+  --primary: #f3f4f6;
+  --primary-foreground: #05050a;
+  --secondary: rgba(255, 255, 255, 0.05);
+  --secondary-foreground: #f3f4f6;
+  --brand: #818cf8;
+  --brand-muted: rgba(99, 102, 241, 0.12);
+  --brand-glow: rgba(99, 102, 241, 0.25);
+  --brand-secondary: #c084fc;
 }
 
 * {
@@ -49,18 +96,173 @@ body {
 }
 
 ::selection {
-  background: var(--primary);
-  color: var(--primary-foreground);
+  background: var(--brand);
+  color: var(--brand-foreground);
 }
 
 html {
   scroll-behavior: smooth;
 }
 
-.hero-glow {
-  background: transparent;
+/* ── Animated gradient mesh for hero ─────────────────────────────────────── */
+@keyframes mesh-move {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.95);
+  }
 }
 
+@keyframes mesh-move-slow {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-40px, 30px) scale(1.15);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes typing {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes blink {
+  50% {
+    border-color: transparent;
+  }
+}
+
+.mesh-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.mesh-blob-1 {
+  background: radial-gradient(circle, var(--brand-glow), transparent 70%);
+  animation: mesh-move 20s ease-in-out infinite;
+}
+
+.mesh-blob-2 {
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.2), transparent 70%);
+  animation: mesh-move-slow 25s ease-in-out infinite;
+}
+
+.mesh-blob-3 {
+  background: radial-gradient(circle, rgba(6, 182, 212, 0.15), transparent 70%);
+  animation: mesh-move 18s ease-in-out infinite reverse;
+}
+
+/* ── Grid pattern ───────────────────────────────────────────────────────── */
+.bg-grid {
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+}
+
+/* ── Glass card ─────────────────────────────────────────────────────────── */
+.glass {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.dark .glass {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ── Glow text ──────────────────────────────────────────────────────────── */
+.text-glow {
+  text-shadow: 0 0 40px var(--brand-glow);
+}
+
+/* ── Gradient text ──────────────────────────────────────────────────────── */
+.gradient-text {
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Animated border gradient ───────────────────────────────────────────── */
+@keyframes border-rotate {
+  0% {
+    --angle: 0deg;
+  }
+  100% {
+    --angle: 360deg;
+  }
+}
+
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.border-gradient {
+  position: relative;
+  background: var(--card);
+  border-radius: var(--radius);
+}
+
+.border-gradient::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: calc(var(--radius) + 1px);
+  background: conic-gradient(from var(--angle), var(--brand), var(--brand-secondary), var(--info), var(--brand));
+  animation: border-rotate 4s linear infinite;
+  z-index: -1;
+}
+
+/* ── Scrollbar ──────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -74,4 +276,82 @@ html {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--muted-foreground);
+}
+
+/* ── Code block styling ─────────────────────────────────────────────────── */
+.code-block {
+  background: #0b0b10;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.code-header {
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.code-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.code-content {
+  padding: 1.25rem;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  color: #e4e4e7;
+  overflow-x: auto;
+}
+
+.code-keyword {
+  color: #c084fc;
+}
+.code-string {
+  color: #4ade80;
+}
+.code-function {
+  color: #60a5fa;
+}
+.code-comment {
+  color: #6b7280;
+}
+.code-number {
+  color: #fbbf24;
+}
+
+/* ── Bento grid hover ───────────────────────────────────────────────────── */
+.bento-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.bento-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.08);
+  border-color: var(--brand);
+}
+
+.dark .bento-card:hover {
+  box-shadow: 0 20px 40px -12px rgba(99, 102, 241, 0.12);
+}
+
+/* ── Sidebar nav active indicator ───────────────────────────────────────── */
+.nav-glow {
+  box-shadow: 0 0 20px var(--brand-glow);
+}
+
+/* ── Terminal cursor ────────────────────────────────────────────────────── */
+.terminal-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.2em;
+  background: var(--brand);
+  animation: blink 1s step-end infinite;
+  vertical-align: text-bottom;
+  margin-left: 2px;
 }

@@ -16,7 +16,7 @@ from __future__ import annotations
 import json
 import uuid
 from io import IOBase
-from typing import Any, Iterator
+from typing import Any, Iterator, AsyncIterator
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
@@ -101,6 +101,52 @@ class MemoryRecord(dict):
     @property
     def expires_at(self) -> str | None:
         return self.get("expires_at")
+
+
+class CollectionRecord(dict):
+    @property
+    def collection_id(self) -> str:
+        return self["collection_id"]
+
+    @property
+    def name(self) -> str:
+        return self["name"]
+
+    @property
+    def file_count(self) -> int:
+        return self["file_count"]
+
+
+class ShareRecord(dict):
+    @property
+    def share_id(self) -> str:
+        return self["share_id"]
+
+    @property
+    def grantee_agent_id(self) -> str | None:
+        return self.get("grantee_agent_id")
+
+    @property
+    def owner_agent_id(self) -> str | None:
+        return self.get("owner_agent_id")
+
+
+class StateRecord(dict):
+    @property
+    def state_id(self) -> str:
+        return self["state_id"]
+
+    @property
+    def key(self) -> str:
+        return self["key"]
+
+    @property
+    def created_at(self) -> str:
+        return self["created_at"]
+
+    @property
+    def updated_at(self) -> str:
+        return self["updated_at"]
 
 
 # ── Multipart helper ──────────────────────────────────────────────────────────
@@ -297,6 +343,75 @@ class MemoryClient(_BaseClient):
         return MemoryRecord(self._request("POST", "/memory", body))
 
 
+# ── Collections sub-client ────────────────────────────────────────────────────
+
+
+class CollectionsClient(_BaseClient):
+    def list(self) -> dict[str, Any]:
+        return self._request("GET", "/collections")
+
+    def create(self, name: str) -> CollectionRecord:
+        return CollectionRecord(self._request("POST", "/collections", {"name": name}))
+
+    def get(self, collection_id: str) -> dict[str, Any]:
+        return self._request("GET", f"/collections/{collection_id}")
+
+    def delete(self, collection_id: str) -> None:
+        self._request("DELETE", f"/collections/{collection_id}")
+
+    def add_file(self, collection_id: str, file_id: str) -> None:
+        self._request("POST", f"/collections/{collection_id}/files", {"file_id": file_id})
+
+    def remove_file(self, collection_id: str, file_id: str) -> None:
+        self._request("DELETE", f"/collections/{collection_id}/files/{file_id}")
+
+
+# ── Shares sub-client ─────────────────────────────────────────────────────────
+
+
+class SharesClient(_BaseClient):
+    def list(self) -> dict[str, Any]:
+        return self._request("GET", "/shares")
+
+    def grant(self, agent_id: str) -> ShareRecord:
+        return ShareRecord(self._request("POST", "/shares", {"agent_id": agent_id}))
+
+    def revoke(self, grantee_id: str) -> None:
+        self._request("DELETE", f"/shares/{grantee_id}")
+
+
+# ── State sub-client ──────────────────────────────────────────────────────────
+
+
+class StateClient(_BaseClient):
+    def list(self, *, limit: int = 20, cursor: str | None = None, key: str | None = None) -> dict[str, Any]:
+        params = f"limit={limit}"
+        if cursor:
+            params += f"&cursor={cursor}"
+        if key:
+            params += f"&key={key}"
+        return self._request("GET", f"/state?{params}")
+
+    def iter(self) -> Iterator[StateRecord]:
+        cursor = None
+        while True:
+            page = self.list(limit=100, cursor=cursor)
+            for s in page["states"]:
+                yield StateRecord(s)
+            cursor = page.get("next_cursor")
+            if not cursor:
+                break
+
+    def get(self, state_id: str) -> dict[str, Any]:
+        return self._request("GET", f"/state/{state_id}")
+
+    def set(self, key: str, data: dict[str, Any]) -> StateRecord:
+        return StateRecord(self._request("POST", "/state", {"key": key, "data": data}))
+
+    def delete(self, state_id: str) -> None:
+        self._request("DELETE", f"/state/{state_id}")
+
+
 # ── Main client ───────────────────────────────────────────────────────────────
 
 
@@ -313,6 +428,9 @@ class FileVault(_BaseClient):
         super().__init__(api_key, base_url)
         self.files = FilesClient(api_key, base_url)
         self.memory = MemoryClient(api_key, base_url)
+        self.collections = CollectionsClient(api_key, base_url)
+        self.shares = SharesClient(api_key, base_url)
+        self.state = StateClient(api_key, base_url)
 
     def search(
         self,

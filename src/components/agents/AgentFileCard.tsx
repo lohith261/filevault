@@ -11,6 +11,47 @@ interface AgentFileCardProps {
   onIndex: (id: string) => Promise<{ chunks_created: number }>
 }
 
+const MIME_COLORS: Record<string, { bg: string; text: string }> = {
+  'application/pdf': { bg: 'bg-red-500/10', text: 'text-red-600' },
+  'text/html': { bg: 'bg-orange-500/10', text: 'text-orange-600' },
+  'application/json': { bg: 'bg-yellow-500/10', text: 'text-yellow-600' },
+  'text/plain': { bg: 'bg-blue-500/10', text: 'text-blue-600' },
+}
+
+function getMimeColor(mime: string) {
+  return MIME_COLORS[mime] ?? { bg: 'bg-[var(--brand-muted)]', text: 'text-[var(--brand)]' }
+}
+
+function getFileIcon(ext: string) {
+  const icons: Record<string, React.ReactNode> = {
+    PDF: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+      </svg>
+    ),
+    HTML: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+      </svg>
+    ),
+    JSON: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+    ),
+    TXT: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+    ),
+  }
+  return icons[ext] ?? (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+    </svg>
+  )
+}
+
 export function AgentFileCard({ file, onDelete, onIndex }: AgentFileCardProps) {
   const [indexing, setIndexing] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -39,6 +80,7 @@ export function AgentFileCard({ file, onDelete, onIndex }: AgentFileCardProps) {
   }
 
   const ext = file.name.split('.').pop()?.toUpperCase() ?? 'FILE'
+  const mimeColor = getMimeColor(file.mime_type)
 
   return (
     <motion.div
@@ -46,15 +88,17 @@ export function AgentFileCard({ file, onDelete, onIndex }: AgentFileCardProps) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: deleting ? 0.4 : 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="group relative rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 transition-colors hover:border-[var(--foreground)]/20"
+      className="group relative rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 transition-all duration-200 hover:border-[var(--brand)]/20 hover:shadow-lg hover:shadow-[var(--brand-glow)]/10"
     >
       {/* Header */}
       <div className="mb-3 flex items-start gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--muted)] text-[10px] font-bold text-[var(--muted-foreground)]">
-          {ext.slice(0, 4)}
+        <div
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${mimeColor.bg} ${mimeColor.text}`}
+        >
+          {getFileIcon(ext)}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-[var(--foreground)]" title={file.name}>
+          <p className="truncate text-sm font-semibold text-[var(--foreground)]" title={file.name}>
             {file.name}
           </p>
           <p className="text-xs text-[var(--muted-foreground)]">
@@ -86,24 +130,24 @@ export function AgentFileCard({ file, onDelete, onIndex }: AgentFileCardProps) {
       {file.metadata && (
         <button
           onClick={() => setShowMeta(!showMeta)}
-          className="mb-2 text-xs text-[var(--primary)] hover:underline"
+          className="mb-2 text-xs text-[var(--brand)] hover:underline font-medium"
         >
           {showMeta ? 'Hide metadata' : 'Show metadata'}
         </button>
       )}
       {showMeta && file.metadata && (
-        <pre className="mb-3 overflow-x-auto rounded-lg bg-[var(--muted)] p-2 text-[10px] text-[var(--muted-foreground)]">
+        <pre className="mb-3 overflow-x-auto rounded-lg bg-[var(--muted)] p-2.5 text-[10px] text-[var(--muted-foreground)] border border-[var(--border)]">
           {JSON.stringify(file.metadata, null, 2)}
         </pre>
       )}
 
       {/* Actions */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
         <a
           href={file.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex h-7 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
+          className="flex h-7 items-center gap-1 rounded-md px-2 text-xs font-medium text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
         >
           <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -115,7 +159,7 @@ export function AgentFileCard({ file, onDelete, onIndex }: AgentFileCardProps) {
           <button
             onClick={handleIndex}
             disabled={indexing}
-            className="flex h-7 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-[var(--primary)] hover:bg-[var(--primary)]/10 disabled:opacity-50 transition-colors"
+            className="flex h-7 items-center gap-1 rounded-md px-2 text-xs font-medium text-[var(--brand)] hover:bg-[var(--brand-muted)] disabled:opacity-50 transition-colors"
           >
             {indexing ? (
               <>
@@ -139,7 +183,7 @@ export function AgentFileCard({ file, onDelete, onIndex }: AgentFileCardProps) {
         <button
           onClick={handleDelete}
           disabled={deleting}
-          className="ml-auto flex h-7 items-center gap-1 rounded-lg px-2.5 text-xs font-medium text-[var(--muted-foreground)] hover:bg-[var(--destructive)]/10 hover:text-[var(--destructive)] disabled:opacity-50 transition-colors"
+          className="ml-auto flex h-7 items-center gap-1 rounded-md px-2 text-xs font-medium text-[var(--muted-foreground)] hover:bg-[var(--destructive)]/10 hover:text-[var(--destructive)] disabled:opacity-50 transition-colors"
         >
           <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

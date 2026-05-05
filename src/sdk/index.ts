@@ -40,10 +40,32 @@ export interface MemoryRecord {
   expires_at: string | null
 }
 
+export interface CollectionRecord {
+  collection_id: string
+  name: string
+  file_count: number
+  created_at: string
+}
+
+export interface ShareRecord {
+  share_id: string
+  grantee_agent_id?: string
+  owner_agent_id?: string
+  created_at: string
+}
+
+export interface StateRecord {
+  state_id: string
+  key: string
+  created_at: string
+  updated_at: string
+}
+
 export interface UsageStats {
   files: { count: number; indexed: number; storage_bytes: number }
   embeddings: { count: number }
   memory: { count: number }
+  states: { count: number }
 }
 
 export interface SearchOptions {
@@ -51,6 +73,8 @@ export interface SearchOptions {
     file_id?: string
     type?: 'files' | 'memory' | 'all'
     metadata?: Record<string, unknown>
+    collection_id?: string
+    include_shared?: boolean
   }
   limit?: number
 }
@@ -77,6 +101,9 @@ export class FileVaultError extends Error {
 export class FileVault {
   readonly files: FilesClient
   readonly memory: MemoryClient
+  readonly collections: CollectionsClient
+  readonly shares: SharesClient
+  readonly state: StateClient
 
   constructor(
     private readonly apiKey: string,
@@ -84,6 +111,9 @@ export class FileVault {
   ) {
     this.files = new FilesClient(apiKey, baseUrl)
     this.memory = new MemoryClient(apiKey, baseUrl)
+    this.collections = new CollectionsClient(apiKey, baseUrl)
+    this.shares = new SharesClient(apiKey, baseUrl)
+    this.state = new StateClient(apiKey, baseUrl)
   }
 
   private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -150,6 +180,16 @@ class FilesClient {
     const res = await fetch(`${this.baseUrl}/api/v1/files?${params}`, { headers: this.headers() })
     if (!res.ok) throw new FileVaultError(res.status, await res.text())
     return res.json()
+  }
+
+  async *iter(options: { indexed?: boolean } = {}): AsyncGenerator<FileRecord> {
+    let cursor: string | null = null
+    while (true) {
+      const page = await this.list({ limit: 100, cursor: cursor ?? undefined, indexed: options.indexed })
+      for (const f of page.files) yield f
+      cursor = page.next_cursor
+      if (!cursor) break
+    }
   }
 
   async get(fileId: string): Promise<FileRecord> {
@@ -235,6 +275,16 @@ class MemoryClient {
     return res.json()
   }
 
+  async *iter(): AsyncGenerator<MemoryRecord> {
+    let cursor: string | null = null
+    while (true) {
+      const page = await this.list({ limit: 100, cursor: cursor ?? undefined })
+      for (const m of page.memories) yield m
+      cursor = page.next_cursor
+      if (!cursor) break
+    }
+  }
+
   async add(content: string, options: { ttl_seconds?: number } = {}): Promise<MemoryRecord> {
     const res = await fetch(`${this.baseUrl}/api/v1/memory`, {
       method: 'POST',
@@ -246,5 +296,154 @@ class MemoryClient {
       throw new FileVaultError(res.status, err.error ?? res.statusText)
     }
     return res.json()
+  }
+}
+
+// ── Collections sub-client ────────────────────────────────────────────────────
+
+class CollectionsClient {
+  constructor(private apiKey: string, private baseUrl: string) {}
+
+  private headers() {
+    return { Authorization: `Bearer ${this.apiKey}`, 'Content-Type': 'application/json' }
+  }
+
+  async list(): Promise<{ collections: CollectionRecord[] }> {
+    const res = await fetch(`${this.baseUrl}/api/v1/collections`, { headers: this.headers() })
+    if (!res.ok) throw new FileVaultError(res.status, await res.text())
+    return res.json()
+  }
+
+  async create(name: string): Promise<CollectionRecord> {
+    const res = await fetch(`${this.baseUrl}/api/v1/collections`, {
+      method: 'POST',
+      headers: this.headers(),
+      body: JSON.stringify({ name }),
+    })
+    if (!res.ok) throw new FileVaultError(res.status, await res.text())
+    return res.json()
+  }
+
+  async get(collectionId: string): Promise<CollectionRecord & { files: FileRecord[] }> {
+    const res = await fetch(`${this.baseUrl}/api/v1/collections/${collectionId}`, { headers: this.headers() })
+    if (!res.ok) throw new FileVaultError(res.status, await res.text())
+    return res.json()
+  }
+
+  async delete(collectionId: string): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/api/v1/collections/${collectionId}`, {
+      method: 'DELETE',
+      headers: this.headers(),
+    })
+    if (!res.ok && res.status !== 204) throw new FileVaultError(res.status, await res.text())
+  }
+
+  async addFile(collectionId: string, fileId: string): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/api/v1/collections/${collectionId}/files`, {
+      method: 'POST',
+      headers: this.headers(),
+      body: JSON.stringify({ file_id: fileId }),
+    })
+    if (!res.ok) throw new FileVaultError(res.status, await res.text())
+  }
+
+  async removeFile(collectionId: string, fileId: string): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/api/v1/collections/${collectionId}/files/${fileId}`, {
+      method: 'DELETE',
+      headers: this.headers(),
+    })
+    if (!res.ok && res.status !== 204) throw new FileVaultError(res.status, await res.text())
+  }
+}
+
+// ── Shares sub-client ─────────────────────────────────────────────────────────
+
+class SharesClient {
+  constructor(private apiKey: string, private baseUrl: string) {}
+
+  private headers() {
+    return { Authorization: `Bearer ${this.apiKey}`, 'Content-Type': 'application/json' }
+  }
+
+  async list(): Promise<{ given: ShareRecord[]; received: ShareRecord[] }> {
+    const res = await fetch(`${this.baseUrl}/api/v1/shares`, { headers: this.headers() })
+    if (!res.ok) throw new FileVaultError(res.status, await res.text())
+    return res.json()
+  }
+
+  async grant(agentId: string): Promise<ShareRecord> {
+    const res = await fetch(`${this.baseUrl}/api/v1/shares`, {
+      method: 'POST',
+      headers: this.headers(),
+      body: JSON.stringify({ agent_id: agentId }),
+    })
+    if (!res.ok) throw new FileVaultError(res.status, await res.text())
+    return res.json()
+  }
+
+  async revoke(granteeId: string): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/api/v1/shares/${granteeId}`, {
+      method: 'DELETE',
+      headers: this.headers(),
+    })
+    if (!res.ok && res.status !== 204) throw new FileVaultError(res.status, await res.text())
+  }
+}
+
+// ── State sub-client ──────────────────────────────────────────────────────────
+
+class StateClient {
+  constructor(private apiKey: string, private baseUrl: string) {}
+
+  private headers() {
+    return { Authorization: `Bearer ${this.apiKey}`, 'Content-Type': 'application/json' }
+  }
+
+  async list(options: { limit?: number; cursor?: string; key?: string } = {}): Promise<{
+    states: StateRecord[]
+    next_cursor: string | null
+  }> {
+    const params = new URLSearchParams()
+    if (options.limit) params.set('limit', String(options.limit))
+    if (options.cursor) params.set('cursor', options.cursor)
+    if (options.key) params.set('key', options.key)
+
+    const res = await fetch(`${this.baseUrl}/api/v1/state?${params}`, { headers: this.headers() })
+    if (!res.ok) throw new FileVaultError(res.status, await res.text())
+    return res.json()
+  }
+
+  async *iter(): AsyncGenerator<StateRecord> {
+    let cursor: string | null = null
+    while (true) {
+      const page = await this.list({ limit: 100, cursor: cursor ?? undefined })
+      for (const s of page.states) yield s
+      cursor = page.next_cursor
+      if (!cursor) break
+    }
+  }
+
+  async get(stateId: string): Promise<StateRecord & { data: Record<string, unknown> }> {
+    const res = await fetch(`${this.baseUrl}/api/v1/state/${stateId}`, { headers: this.headers() })
+    if (!res.ok) throw new FileVaultError(res.status, await res.text())
+    return res.json()
+  }
+
+  async set(key: string, data: Record<string, unknown>): Promise<StateRecord> {
+    const res = await fetch(`${this.baseUrl}/api/v1/state`, {
+      method: 'POST',
+      headers: this.headers(),
+      body: JSON.stringify({ key, data }),
+    })
+    if (!res.ok) throw new FileVaultError(res.status, await res.text())
+    return res.json()
+  }
+
+  async delete(stateId: string): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/api/v1/state/${stateId}`, {
+      method: 'DELETE',
+      headers: this.headers(),
+    })
+    if (!res.ok && res.status !== 204) throw new FileVaultError(res.status, await res.text())
   }
 }

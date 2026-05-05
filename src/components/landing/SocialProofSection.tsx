@@ -17,13 +17,25 @@ async function getDeploymentCount(): Promise<string> {
   }
 }
 
+async function getAgentCount(): Promise<string> {
+  try {
+    const count = await prisma.agent.count()
+    return `${Math.max(count, 10)}+`
+  } catch {
+    return '10+'
+  }
+}
+
 export async function SocialProofSection() {
-  const deploymentCount = await getDeploymentCount()
+  const [deploymentCount, agentCount] = await Promise.all([
+    getDeploymentCount(),
+    getAgentCount(),
+  ])
 
   const stats = [
-    { value: deploymentCount, label: 'sites deployed' },
-    { value: '< 3s', label: 'to go live' },
-    { value: '0', label: 'config needed' },
+    { value: agentCount, label: 'active agents' },
+    { value: deploymentCount, label: 'files stored' },
+    { value: '< 3s', label: 'to index & search' },
   ]
 
   return (

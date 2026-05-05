@@ -6,6 +6,7 @@ const AGENT_CAPS = {
   maxStorageBytes: 1 * 1024 * 1024 * 1024, // 1 GB
   maxEmbeddings: 50_000,
   maxMemories: 5_000,
+  maxStates: 1_000,
 } as const
 
 export interface CapCheck {
@@ -45,6 +46,14 @@ export async function checkMemoryCapacity(agentId: string): Promise<CapCheck> {
   })
   if (count >= AGENT_CAPS.maxMemories) {
     return { allowed: false, reason: `Memory limit reached (max ${AGENT_CAPS.maxMemories}).` }
+  }
+  return { allowed: true }
+}
+
+export async function checkStateCapacity(agentId: string): Promise<CapCheck> {
+  const count = await prisma.agentState.count({ where: { agentId } })
+  if (count >= AGENT_CAPS.maxStates) {
+    return { allowed: false, reason: `State limit reached (max ${AGENT_CAPS.maxStates}).` }
   }
   return { allowed: true }
 }

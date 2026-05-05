@@ -17,11 +17,12 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'FileVault — Instant Static File Hosting',
-  description: 'Host HTML, ZIP, and static files instantly. Get a shareable link in under 3 seconds. No account required.',
+  title: 'FileVault — The Storage Layer AI Agents Actually Need',
+  description:
+    'Files, memory, semantic search, and agent-to-agent sharing — one API. Built for AI agents. Useful for humans too.',
   openGraph: {
-    title: 'FileVault — Instant Static File Hosting',
-    description: 'Host HTML, ZIP, and static files instantly.',
+    title: 'FileVault — The Storage Layer AI Agents Actually Need',
+    description: 'Files, memory, semantic search, and agent-to-agent sharing — one API.',
     type: 'website',
   },
 }
