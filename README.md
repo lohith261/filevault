@@ -202,6 +202,23 @@ All limits return `429` with a descriptive `error` field.
 | `DELETE` | `/v1/files/:id` | Delete file + embeddings |
 | `POST` | `/v1/files/:id/index` | Index on demand |
 
+**File object:**
+```json
+{
+  "file_id": "clx...",
+  "name": "report.pdf",
+  "mime_type": "application/pdf",
+  "size_bytes": 1024000,
+  "is_indexed": true,
+  "index_status": "indexed",
+  "metadata": { "project": "q3" },
+  "url": "https://...",
+  "created_at": "2026-05-05T10:00:00.000Z"
+}
+```
+
+**Async indexing.** When you upload with `index=true`, the file is accepted immediately and indexing runs in the background. Poll `GET /v1/files/:id` and watch `index_status` transition from `pending` → `indexing` → `indexed` (or `failed`).
+
 ### Search
 
 | Method | Path | Description |
@@ -345,7 +362,7 @@ npx prisma generate
 npm run dev
 ```
 
-Open [http://localhost:3001](http://localhost:3001).
+Open [http://localhost:3000](http://localhost:3000).
 
 ### 5. Run MCP server locally
 
@@ -369,7 +386,9 @@ npm test
 2. Set all environment variables in **Project → Settings → Environment Variables**
 3. Add `STORAGE_DRIVER=r2` and the five R2 vars
 4. Add `OPENROUTER_API_KEY`
-5. Deploy — migrations run automatically via `prisma generate && next build`
+5. Deploy
+
+> **Note:** `prisma migrate deploy` does **not** run during the Vercel build. You must run it manually once after first deploy (e.g. via Vercel CLI or a one-off script), or use a platform like Railway that runs it at container start.
 
 ### Railway
 
@@ -420,7 +439,7 @@ npm test
 1. Fork the repo
 2. Create a feature branch: `git checkout -b feat/your-feature`
 3. Run tests: `npm test`
-4. Typecheck: `node node_modules/typescript/lib/tsc.js --noEmit`
+4. Lint: `npm run lint`
 5. Open a PR with a clear description
 
 ---
