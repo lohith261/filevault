@@ -1,9 +1,13 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "sqlite"
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+
+  extensions = [pgvector(map: "vector", schema: "public")]
 }
 
 model Site {
@@ -146,7 +150,7 @@ model Embedding {
   fileId    String?
   file      AgentFile? @relation(fields: [fileId], references: [id], onDelete: Cascade)
   content   String
-  vector    String
+  vector    Unsupported("vector(1536)")
   createdAt DateTime   @default(now())
 
   @@index([agentId])
@@ -159,7 +163,7 @@ model Memory {
   agentId   String
   agent     Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
   content   String
-  vector    String
+  vector    Unsupported("vector(1536)")
   expiresAt DateTime?
   createdAt DateTime  @default(now())
 

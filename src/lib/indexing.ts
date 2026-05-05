@@ -12,6 +12,8 @@ export interface IndexResult {
 }
 
 // Extract text → chunk → embed → store embeddings for a file.
+// Uses raw SQL with pgvector's ::vector cast since Prisma Unsupported fields
+// are invisible to the ORM create/update methods.
 export async function indexFile(
   agentId: string,
   fileId: string,
@@ -28,9 +30,11 @@ export async function indexFile(
   await Promise.all(
     chunks.map(async (chunk) => {
       const vector = await generateEmbedding(chunk)
-      await prisma.embedding.create({
-        data: { agentId, fileId, content: chunk, vector: JSON.stringify(vector) },
-      })
+      const vectorLiteral = `[${vector.join(',')}]`
+      await prisma.$executeRaw`
+        INSERT INTO embeddings (id, agent_id, file_id, content, vector, created_at)
+        VALUES (${crypto.randomUUID()}, ${agentId}, ${fileId}, ${chunk}, ${vectorLiteral}::vector, NOW())
+      `
     })
   )
 

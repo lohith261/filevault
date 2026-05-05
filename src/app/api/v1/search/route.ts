@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { resolveAgent } from '@/lib/auth/apiKey'
 import { generateEmbedding } from '@/lib/embeddings'
-import { cosineSimilarity, rankResults, type SearchResult } from '@/lib/search/similarity'
+import { rankResults, type SearchResult } from '@/lib/search/similarity'
 
 const SearchSchema = z.object({
   query: z.string().min(1).max(2000),
@@ -20,8 +20,8 @@ const SearchSchema = z.object({
 })
 
 // POST /v1/search
-// Generates a query embedding and returns top-K results ranked by cosine similarity.
-// Searches both file embeddings and memory for the agent.
+// Generates a query embedding and returns top-K results ranked by cosine similarity
+// using pgvector's native <=> distance operator in raw SQL.
 export async function POST(req: NextRequest) {
   const agentId = await resolveAgent(req.headers.get('authorization'))
   if (!agentId) {
@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
     const includeShared = filter?.include_shared ?? false
 
     const queryVector = await generateEmbedding(query)
+    const vectorLiteral = `[${queryVector.join(',')}]`
     const results: SearchResult[] = []
 
     // Resolve which agentIds to search across (own + optionally shared-from agents)
@@ -64,35 +65,51 @@ export async function POST(req: NextRequest) {
       collectionFileIds = cf.map((r) => r.fileId)
     }
 
-    // Search file embeddings
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? ''
+
+    // --- FILE SEARCH via pgvector ---
     if (searchType === 'all' || searchType === 'files') {
-      const where: Record<string, unknown> = {
-        agentId: agentIds.length === 1 ? agentId : { in: agentIds },
-        ...(filter?.file_id ? { fileId: filter.file_id } : {}),
-        ...(collectionFileIds ? { fileId: { in: collectionFileIds } } : {}),
-      }
+      const fileIdFilter = filter?.file_id
+      const agentIdList = agentIds.map((id) => `'${id}'`).join(',')
+      const fileWhere = fileIdFilter
+        ? `AND e.file_id = '${fileIdFilter}'`
+        : collectionFileIds
+          ? `AND e.file_id IN (${collectionFileIds.map((id) => `'${id}'`).join(',')})`
+          : ''
 
-      const rows = await prisma.embedding.findMany({
-        where: {
-          ...where,
-          file: { indexStatus: 'indexed' },
-        },
-        select: {
-          id: true,
-          content: true,
-          vector: true,
-          fileId: true,
-          agentId: true,
-          file: { select: { name: true, storageKey: true, metadata: true } },
-        },
-      })
+      const rows = await prisma.$queryRaw<
+        Array<{
+          id: string
+          content: string
+          score: number
+          file_id: string
+          name: string | null
+          storage_key: string | null
+          metadata: string | null
+        }>
+      >`
+        SELECT
+          e.id,
+          e.content,
+          1 - (e.vector <=> ${vectorLiteral}::vector) AS score,
+          e.file_id,
+          f.name,
+          f.storage_key,
+          f.metadata
+        FROM embeddings e
+        JOIN agent_files f ON f.id = e.file_id
+        WHERE e.agent_id IN (${agentIdList})
+          AND f.index_status = 'indexed'
+          ${fileWhere}
+        ORDER BY e.vector <=> ${vectorLiteral}::vector
+        LIMIT ${limit * 4}
+      `
 
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? ''
       for (const row of rows) {
-        // Apply metadata filter in-memory
-        if (metadataFilter && row.file?.metadata) {
+        // Apply metadata filter in-memory (metadata is JSON text)
+        if (metadataFilter && row.metadata) {
           try {
-            const fileMeta = JSON.parse(row.file.metadata) as Record<string, unknown>
+            const fileMeta = JSON.parse(row.metadata) as Record<string, unknown>
             const matches = Object.entries(metadataFilter).every(([k, v]) => fileMeta[k] === v)
             if (!matches) continue
           } catch {
@@ -102,41 +119,47 @@ export async function POST(req: NextRequest) {
           continue
         }
 
-        const vec = JSON.parse(row.vector) as number[]
-        const score = cosineSimilarity(queryVector, vec)
-        const url = row.file?.storageKey.startsWith('https://')
-          ? row.file.storageKey
-          : row.fileId
-          ? `${baseUrl}/v1/files/${row.fileId}`
-          : undefined
+        const url = row.storage_key?.startsWith('https://')
+          ? row.storage_key
+          : `${baseUrl}/v1/files/${row.file_id}`
+
         results.push({
           id: row.id,
           type: 'file',
           content: row.content,
-          score,
-          fileId: row.fileId ?? undefined,
+          score: row.score,
+          fileId: row.file_id,
           fileUrl: url,
         })
       }
     }
 
-    // Search memories
+    // --- MEMORY SEARCH via pgvector ---
     if (searchType === 'all' || searchType === 'memory') {
-      const memories = await prisma.memory.findMany({
-        where: {
-          agentId,
-          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-        },
-        select: { id: true, content: true, vector: true },
-      })
+      const rows = await prisma.$queryRaw<
+        Array<{
+          id: string
+          content: string
+          score: number
+        }>
+      >`
+        SELECT
+          id,
+          content,
+          1 - (vector <=> ${vectorLiteral}::vector) AS score
+        FROM memories
+        WHERE agent_id = ${agentId}
+          AND (expires_at IS NULL OR expires_at > NOW())
+        ORDER BY vector <=> ${vectorLiteral}::vector
+        LIMIT ${limit * 2}
+      `
 
-      for (const mem of memories) {
-        const vec = JSON.parse(mem.vector) as number[]
+      for (const row of rows) {
         results.push({
-          id: mem.id,
+          id: row.id,
           type: 'memory',
-          content: mem.content,
-          score: cosineSimilarity(queryVector, vec),
+          content: row.content,
+          score: row.score,
         })
       }
     }

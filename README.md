@@ -155,8 +155,8 @@ FileVault exposes an MCP server so any compatible client can use it without code
 │                                                              │
 └────────────┬──────────────────────────────┬─────────────────┘
              │                              │
-      Prisma (libsql)                 Cloudflare R2
-      SQLite / Turso                  (object storage)
+      PostgreSQL + pgvector           Cloudflare R2
+      (vectors + relational)          (object storage)
              │
     ┌────────┴────────────────────┐
     │  Embedding pipeline          │
@@ -299,7 +299,15 @@ Drop a ZIP or HTML file on the homepage, get a shareable URL in seconds. This is
 ### Prerequisites
 
 - Node.js 20+
-- SQLite (`sqlite3` CLI)
+- PostgreSQL 15+ with [pgvector](https://github.com/pgvector/pgvector)
+
+The fastest way is Docker:
+
+```bash
+docker compose up -d
+```
+
+This spins up `ankane/pgvector` on `localhost:5432`.
 
 ### 1. Clone & install
 
@@ -318,10 +326,8 @@ cp .env.example .env.local
 Minimum for local dev:
 
 ```env
-DATABASE_URL="file:./prisma/filevault.db"
-DIRECT_URL="file:./prisma/filevault.db"
-NEXT_PUBLIC_BASE_URL="http://localhost:3001"
-NEXT_PUBLIC_BASE_DOMAIN="localhost"
+DATABASE_URL="postgresql://filevault:filevault@localhost:5432/filevault"
+NEXT_PUBLIC_BASE_URL="http://localhost:3000"
 CRON_SECRET="dev-cron-secret"
 OPENROUTER_API_KEY="sk-or-v1-..."
 ```
@@ -329,7 +335,7 @@ OPENROUTER_API_KEY="sk-or-v1-..."
 ### 3. Apply migrations
 
 ```bash
-sqlite3 prisma/filevault.db < prisma/migrations/*/migration.sql
+npx prisma migrate deploy
 npx prisma generate
 ```
 
@@ -368,9 +374,10 @@ npm test
 ### Railway
 
 1. **Deploy from GitHub repo** → Railway auto-detects `railway.json`
-2. **Volumes → Add Volume**, mount at `/app/uploads`
-3. Set `DATABASE_URL=file:/app/uploads/filevault.db`, `UPLOADS_PATH=/app/uploads`
-4. Add all other env vars
+2. Provision a **PostgreSQL** database (Railway plugin or external)
+3. Add `DATABASE_URL` pointing to your Postgres instance
+4. Add `UPLOADS_PATH=/app/uploads` and mount a Volume at `/app/uploads`
+5. Add all other env vars
 
 ---
 
@@ -381,8 +388,8 @@ npm test
 | Framework | Next.js 16 (App Router) |
 | Language | TypeScript 5 |
 | Styling | Tailwind CSS v4 |
-| ORM | Prisma 7 with `@prisma/adapter-libsql` |
-| Database | SQLite / Turso (libsql) |
+| ORM | Prisma 7 |
+| Database | PostgreSQL + pgvector |
 | Object storage | Cloudflare R2 |
 | Embeddings | OpenRouter → `openai/text-embedding-3-small` |
 | Auth (human) | Clerk v7 (optional) |
@@ -396,7 +403,7 @@ npm test
 
 - [ ] Streaming search
 - [ ] Re-ranking with cross-encoder
-- [ ] pgvector migration
+- [x] pgvector migration
 - [ ] Billing for agent API
 
 ### v1.2

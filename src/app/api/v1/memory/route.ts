@@ -12,7 +12,8 @@ const StoreMemorySchema = z.object({
 })
 
 // POST /v1/memory
-// Stores a memory entry with an embedding for later semantic retrieval.
+// Stores a memory entry with a pgvector embedding for later semantic retrieval.
+// Uses raw SQL because the vector field is Prisma Unsupported("vector(1536)").
 export async function POST(req: NextRequest) {
   const agentId = await resolveAgent(req.headers.get('authorization'))
   if (!agentId) {
@@ -35,21 +36,21 @@ export async function POST(req: NextRequest) {
 
     const vector = await generateEmbedding(content)
     const expiresAt = ttl ? new Date(Date.now() + ttl * 1000) : null
+    const vectorLiteral = `[${vector.join(',')}]`
 
-    const memory = await prisma.memory.create({
-      data: {
-        agentId,
-        content,
-        vector: JSON.stringify(vector),
-        expiresAt,
-      },
-    })
+    const result = await prisma.$queryRaw<[{ id: string; createdAt: Date }]>"
+      INSERT INTO memories (id, agent_id, content, vector, expires_at, created_at)
+      VALUES (gen_random_uuid(), ${agentId}, ${content}, ${vectorLiteral}::vector, ${expiresAt}, NOW())
+      RETURNING id, created_at
+    "
+
+    const memory = result[0]
 
     return NextResponse.json(
       {
         memory_id: memory.id,
-        content: memory.content,
-        expires_at: memory.expiresAt?.toISOString() ?? null,
+        content,
+        expires_at: expiresAt?.toISOString() ?? null,
         created_at: memory.createdAt,
       },
       { status: 201 }
