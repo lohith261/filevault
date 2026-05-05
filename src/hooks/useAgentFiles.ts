@@ -9,6 +9,7 @@ export interface AgentFileRecord {
   mime_type: string
   size_bytes: number
   is_indexed: boolean
+  index_status: 'not_indexed' | 'pending' | 'indexing' | 'indexed' | 'failed'
   metadata: Record<string, unknown> | null
   url: string
   created_at: string

@@ -1,12 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Spinner } from '@/components/ui/Spinner'
 
-type Step = 'idle' | 'creating' | 'reveal' | 'enter'
+type Step = 'idle' | 'creating' | 'reveal'
 
 interface AgentSetupProps {
   onKeyReady: (key: string) => void
@@ -61,72 +61,63 @@ export function AgentSetup({ onKeyReady }: AgentSetupProps) {
   }
 
   return (
-    <div className="flex min-h-[80vh] items-center justify-center px-4 py-20 relative">
-      {/* Background glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-r from-[var(--brand)]/10 to-[var(--brand-secondary)]/10 rounded-full blur-3xl pointer-events-none" />
-
+    <div className="flex min-h-[80vh] items-center justify-center px-4 py-20">
       <AnimatePresence mode="wait">
         {step === 'idle' && (
           <motion.div
             key="idle"
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            className="relative w-full max-w-md"
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="w-full max-w-sm"
           >
-            <div className="mb-8 text-center">
-              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--brand)] to-[var(--brand-secondary)] shadow-lg shadow-[var(--brand-glow)]">
-                <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714a2.25 2.25 0 001.591 2.25L21 14.5m-9 0l3.75 4.5M12 3.104v.082m0 0a24.301 24.301 0 00-4.5 0" />
-                </svg>
-              </div>
-              <h1 className="text-2xl font-bold text-[var(--foreground)] tracking-tight">
+            <div className="mb-8">
+              <p className="text-[11px] font-mono uppercase tracking-[0.15em] text-[var(--muted-foreground)] mb-2">
                 Agent Dashboard
+              </p>
+              <h1 className="text-2xl font-bold text-[var(--foreground)] tracking-tight">
+                Get started
               </h1>
-              <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+              <p className="mt-1 text-sm text-[var(--muted-foreground)]">
                 Create a new agent or load an existing one.
               </p>
             </div>
 
             <div className="space-y-3">
-              <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 hover:border-[var(--brand)]/20 transition-colors">
-                <p className="mb-3 text-sm font-semibold text-[var(--foreground)]">New agent</p>
+              <div className="border border-[var(--border)] rounded-sm p-4">
+                <p className="mb-2 text-sm font-medium text-[var(--foreground)]">New agent</p>
                 <Input
-                  placeholder="Agent name (optional)"
+                  placeholder="Name (optional)"
                   value={agentName}
                   onChange={(e) => setAgentName(e.target.value)}
-                  className="mb-3"
+                  className="mb-2 text-sm"
                 />
                 <Button
-                  className="w-full bg-[var(--brand)] text-[var(--brand-foreground)] hover:opacity-90 shadow-md shadow-[var(--brand-glow)]"
+                  size="sm"
+                  className="w-full bg-[var(--brand)] text-[var(--brand-foreground)] hover:opacity-90"
                   onClick={createAgent}
                 >
                   Create agent
                 </Button>
               </div>
 
-              <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 hover:border-[var(--brand)]/20 transition-colors">
-                <p className="mb-3 text-sm font-semibold text-[var(--foreground)]">Existing agent</p>
+              <div className="border border-[var(--border)] rounded-sm p-4">
+                <p className="mb-2 text-sm font-medium text-[var(--foreground)]">Existing agent</p>
                 <Input
                   placeholder="fv_sk_..."
                   value={enterKey}
                   onChange={(e) => setEnterKey(e.target.value)}
-                  className="mb-3 font-mono text-xs"
+                  className="mb-2 font-mono text-xs"
                 />
-                <Button variant="secondary" className="w-full" onClick={submitEnterKey}>
+                <Button variant="secondary" size="sm" className="w-full" onClick={submitEnterKey}>
                   Load agent
                 </Button>
               </div>
             </div>
 
             {error && (
-              <motion.p
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-3 text-center text-sm text-[var(--destructive)]"
-              >
-                {error}
-              </motion.p>
+              <p className="mt-3 text-xs text-[var(--destructive)]">{error}</p>
             )}
           </motion.div>
         )}
@@ -141,34 +132,30 @@ export function AgentSetup({ onKeyReady }: AgentSetupProps) {
         {step === 'reveal' && (
           <motion.div
             key="reveal"
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-md"
+            transition={{ duration: 0.2 }}
+            className="w-full max-w-sm"
           >
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-[var(--success)]/[0.03] to-transparent" />
-
-              <div className="relative mb-5 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--success)]/10">
-                  <svg className="h-5 w-5 text-[var(--success)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="font-semibold text-[var(--foreground)]">Agent created</p>
-                  <p className="text-xs text-[var(--muted-foreground)]">Copy your API key — it won&apos;t be shown again.</p>
-                </div>
+            <div className="border border-[var(--border)] rounded-sm p-5">
+              <div className="mb-4 flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-[var(--success)]" />
+                <p className="text-sm font-medium text-[var(--foreground)]">Agent created</p>
               </div>
+              <p className="mb-3 text-xs text-[var(--muted-foreground)]">
+                Copy your API key — it won&apos;t be shown again.
+              </p>
 
-              <div className="relative mb-4 rounded-xl border border-[var(--border)] bg-[var(--muted)] px-3 py-3">
+              <div className="mb-4 rounded-sm border border-[var(--border)] bg-[var(--muted)] px-3 py-2.5">
                 <p className="break-all font-mono text-xs text-[var(--foreground)]">{newKey}</p>
               </div>
 
-              <div className="relative flex gap-2">
-                <Button variant="secondary" className="flex-1" onClick={copy}>
-                  {copied ? 'Copied!' : 'Copy key'}
+              <div className="flex gap-2">
+                <Button variant="secondary" size="sm" className="flex-1" onClick={copy}>
+                  {copied ? 'Copied' : 'Copy'}
                 </Button>
                 <Button
+                  size="sm"
                   className="flex-1 bg-[var(--brand)] text-[var(--brand-foreground)] hover:opacity-90"
                   onClick={confirmKey}
                 >

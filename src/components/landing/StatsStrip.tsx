@@ -2,36 +2,42 @@
 
 import { motion } from 'framer-motion'
 
-interface Stat {
-  value: string
-  label: string
+interface StatsStripProps {
+  agents: number
+  files: number
 }
 
-export function StatsStrip({ stats }: { stats: Stat[] }) {
+export function StatsStrip({ agents, files }: StatsStripProps) {
+  const stats = [
+    { label: 'Active agents', value: agents.toLocaleString() },
+    { label: 'Files stored', value: files.toLocaleString() },
+    { label: 'Index latency', value: '< 3s' },
+    { label: 'Query latency', value: '< 50ms' },
+  ]
+
   return (
-    <div>
-      <p className="mb-6 text-center text-xs font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
-        By the numbers
-      </p>
-      <div className="grid grid-cols-3 gap-px rounded-2xl overflow-hidden bg-gradient-to-r from-[var(--brand)]/20 via-[var(--brand-secondary)]/20 to-[var(--info)]/20 p-px">
-        <div className="grid grid-cols-3 col-span-3 rounded-2xl overflow-hidden">
+    <section className="border-b border-[var(--border)]">
+      <div className="mx-auto max-w-7xl px-6">
+        <div className="flex flex-wrap items-center divide-x divide-[var(--border)]">
           {stats.map((stat, i) => (
             <motion.div
               key={stat.label}
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: i * 0.1 }}
-              className="px-4 sm:px-6 py-8 text-center bg-[var(--card)]"
+              transition={{ duration: 0.3, delay: i * 0.05 }}
+              className="flex-1 min-w-[140px] px-5 py-4 first:pl-0"
             >
-              <p className="text-2xl sm:text-4xl font-extrabold tracking-tight gradient-text">
+              <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--muted-foreground)] mb-1">
+                {stat.label}
+              </p>
+              <p className="text-lg font-mono text-[var(--foreground)] tabular-nums tracking-tight">
                 {stat.value}
               </p>
-              <p className="mt-1.5 text-xs sm:text-sm text-[var(--muted-foreground)]">{stat.label}</p>
             </motion.div>
           ))}
         </div>
       </div>
-    </div>
+    </section>
   )
 }

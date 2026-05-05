@@ -3,14 +3,13 @@ import Link from 'next/link'
 export function Footer() {
   return (
     <footer className="border-t border-[var(--border)] bg-[var(--background)] relative overflow-hidden">
-      {/* Subtle gradient at top of footer */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--brand)]/30 to-transparent" />
+      <div className="absolute top-0 left-0 right-0 h-px bg-[var(--border)]" />
 
       <div className="mx-auto max-w-7xl px-6 py-12">
         <div className="flex flex-col lg:flex-row items-start justify-between gap-10">
           <div className="max-w-sm">
             <div className="flex items-center gap-2.5 mb-4">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--brand)] to-[var(--brand-secondary)]">
+              <div className="flex h-7 w-7 items-center justify-center rounded-sm bg-[var(--brand)]">
                 <svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
