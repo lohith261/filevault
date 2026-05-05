@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { resolveAgent } from '@/lib/auth/apiKey'
 import { generateEmbedding } from '@/lib/embeddings'
 import { rankResults, type SearchResult } from '@/lib/search/similarity'
@@ -70,40 +71,40 @@ export async function POST(req: NextRequest) {
     // --- FILE SEARCH via pgvector ---
     if (searchType === 'all' || searchType === 'files') {
       const fileIdFilter = filter?.file_id
-      const agentIdList = agentIds.map((id) => `'${id}'`).join(',')
+      const agentIdList = Prisma.join(agentIds)
       const fileWhere = fileIdFilter
-        ? `AND e.file_id = '${fileIdFilter}'`
+        ? Prisma.sql`AND e.file_id = ${fileIdFilter}`
         : collectionFileIds
-          ? `AND e.file_id IN (${collectionFileIds.map((id) => `'${id}'`).join(',')})`
-          : ''
+          ? Prisma.sql`AND e.file_id IN (${Prisma.join(collectionFileIds)})`
+          : Prisma.empty
 
-      const rows = await prisma.$queryRaw<
-        Array<{
-          id: string
-          content: string
-          score: number
-          file_id: string
-          name: string | null
-          storage_key: string | null
-          metadata: string | null
-        }>
-      >`
-        SELECT
-          e.id,
-          e.content,
-          1 - (e.vector <=> ${vectorLiteral}::vector) AS score,
-          e.file_id,
-          f.name,
-          f.storage_key,
-          f.metadata
-        FROM embeddings e
-        JOIN agent_files f ON f.id = e.file_id
-        WHERE e.agent_id IN (${agentIdList})
-          AND f.index_status = 'indexed'
-          ${fileWhere}
-        ORDER BY e.vector <=> ${vectorLiteral}::vector
-        LIMIT ${limit * 4}
-      `
+      const rows = await prisma.$queryRaw(
+        Prisma.sql`
+          SELECT
+            e.id,
+            e.content,
+            1 - (e.vector <=> ${vectorLiteral}::vector) AS score,
+            e.file_id,
+            f.name,
+            f.storage_key,
+            f.metadata
+          FROM embeddings e
+          JOIN agent_files f ON f.id = e.file_id
+          WHERE e.agent_id IN (${agentIdList})
+            AND f.index_status = 'indexed'
+            ${fileWhere}
+          ORDER BY e.vector <=> ${vectorLiteral}::vector
+          LIMIT ${limit * 4}
+        `
+      ) as Array<{
+        id: string
+        content: string
+        score: number
+        file_id: string
+        name: string | null
+        storage_key: string | null
+        metadata: string | null
+      }>
 
       for (const row of rows) {
         // Apply metadata filter in-memory (metadata is JSON text)

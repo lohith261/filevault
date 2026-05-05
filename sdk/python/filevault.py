@@ -51,6 +51,10 @@ class FileRecord(dict):
         return self["is_indexed"]
 
     @property
+    def index_status(self) -> str:
+        return self["index_status"]
+
+    @property
     def url(self) -> str:
         return self["url"]
 

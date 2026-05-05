@@ -1,3 +1,4 @@
+import crypto from 'crypto'
 import { prisma } from '@/lib/prisma'
 import { generateEmbedding } from '@/lib/embeddings'
 import { chunkText } from '@/lib/chunking'

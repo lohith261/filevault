@@ -137,6 +137,7 @@ function formatFile(
     mimeType: string
     sizeBytes: bigint
     isIndexed: boolean
+    indexStatus: string
     metadata: string | null
     storageKey: string
     createdAt: Date
@@ -149,6 +150,7 @@ function formatFile(
     mime_type: f.mimeType,
     size_bytes: Number(f.sizeBytes),
     is_indexed: f.isIndexed,
+    index_status: f.indexStatus,
     metadata: f.metadata ? JSON.parse(f.metadata) : null,
     url: f.storageKey.startsWith('https://') ? f.storageKey : `${baseUrl}/v1/files/${f.id}`,
     created_at: f.createdAt,
