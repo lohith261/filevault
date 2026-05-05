@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['jszip', 'bcryptjs', '@libsql/client', '@prisma/adapter-libsql'],
+  serverExternalPackages: ['jszip', 'bcryptjs'],
   async headers() {
     return [
       {
