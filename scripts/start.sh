@@ -34,7 +34,7 @@ else
   exit 1
 fi
 
-# Start Next.js using direct node invocation (npx/npm scripts have MODULE_NOT_FOUND issues)
-# Cap V8 heap to 512MB to prevent OOM crashes on Railway
+# Start Next.js standalone server — smaller memory footprint than full next start
+# Cap V8 heap to 300MB, leaving headroom for OS + native overhead in Railway's 512MB container
 echo "[deploy] Starting Next.js on port ${PORT:-3000}..."
-exec node --max-old-space-size=512 node_modules/next/dist/bin/next start -p "${PORT:-3000}"
+exec node --max-old-space-size=300 .next/standalone/server.js
