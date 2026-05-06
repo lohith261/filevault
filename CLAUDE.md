@@ -28,14 +28,26 @@ node node_modules/next/dist/bin/next dev
 
 ---
 
+## Deployment
+
+**Production: Vercel** — `filevault-five.vercel.app`
+- GitHub integration auto-deploys on every push to `main`
+- Serverless — no persistent filesystem, no memory limits, no start script needed
+- Vercel does NOT run migrations automatically. Run them manually via Supabase SQL editor when schema changes
+
+`railway.json` and `scripts/start.sh` remain in the repo but Railway is no longer the primary deployment target.
+
+---
+
 ## Key files — go here first
 
 | File | Purpose |
 |---|---|
 | `prisma/schema.prisma` | Single source of truth for all DB models |
+| `prisma.config.ts` | Prisma 7 connection config — prefers `DIRECT_URL` over `DATABASE_URL` for migrations |
 | `src/proxy.ts` | Middleware — subdomain rewrites + Clerk auth (NOT `middleware.ts`) |
 | `src/lib/auth/apiKey.ts` | `generateApiKey()`, `hashApiKey()`, `resolveAgent(authHeader)` |
-| `src/lib/prisma.ts` | Prisma client singleton (libsql adapter) |
+| `src/lib/prisma.ts` | Prisma client singleton — lazy proxy pattern with `@prisma/adapter-pg` |
 | `src/lib/storage/index.ts` | `storageDriver` — always import from here, never from `local.ts` / `r2.ts` directly |
 | `src/lib/storage/types.ts` | `StorageDriver` interface, `FileEntry` type |
 | `src/lib/embeddings/index.ts` | `generateEmbedding(text)` → `number[]` via OpenRouter |
@@ -58,6 +70,8 @@ node node_modules/next/dist/bin/next dev
 
 ## Database models (prisma/schema.prisma)
 
+**Provider:** PostgreSQL (Supabase) with `pgvector` extension enabled.
+
 **Human hosting:**
 - `Site` — a deployed static site (slug, userId, passwordHash, expiresAt, customDomain, storagePrefix)
 - `SiteFile` — individual file within a Site (path, mimeType, sizeBytes, storageKey)
@@ -67,13 +81,15 @@ node node_modules/next/dist/bin/next dev
 **Agent system:**
 - `Agent` — API key identity (apiKeyHash, name, webhookUrl nullable)
 - `AgentFile` — file uploaded via agent API (agentId, storageKey, metadata JSON string, isIndexed)
-- `Embedding` — text chunk + vector (agentId, fileId nullable, content, vector as JSON string)
-- `Memory` — agent memory entry (agentId, content, vector as JSON string, expiresAt nullable)
+- `Embedding` — text chunk + native pgvector column (agentId, fileId nullable, content, vector `vector(1536)`)
+- `Memory` — agent memory entry (agentId, content, vector `vector(1536)`, expiresAt nullable)
 - `Collection` — named group of files belonging to an agent
 - `CollectionFile` — join table: (collectionId, fileId) composite PK
 - `AgentShare` — grants read access from ownerAgentId to granteeAgentId (unique pair)
 
-Vectors are stored as JSON-encoded `number[]` strings. Parse with `JSON.parse()`, serialize with `JSON.stringify()`.
+Vectors use native pgvector `Unsupported("vector(1536)")` in the schema. All vector queries use raw SQL with the `<=>` cosine distance operator — never try to read/write the vector column through Prisma's typed API.
+
+`AgentFile.metadata` is stored as a JSON **string** — always `JSON.parse()` before returning.
 
 ---
 
@@ -124,16 +140,16 @@ Vectors are stored as JSON-encoded `number[]` strings. Parse with `JSON.parse()`
 ## Environment variables
 
 ```bash
-# Database (libsql)
-DATABASE_URL          # file:./prisma/filevault.db locally
-DIRECT_URL            # same as DATABASE_URL for SQLite
+# Database (PostgreSQL — Supabase)
+DATABASE_URL   # Supabase connection pooler (port 6543, pgbouncer) — used at runtime
+DIRECT_URL     # Supabase direct connection (port 5432) — used by prisma migrate deploy only
 
-# Storage — set STORAGE_DRIVER=r2 to switch from local to R2
-STORAGE_DRIVER        # "local" (default) or "r2"
+# Storage — production uses R2, local dev uses local disk
+STORAGE_DRIVER        # "r2" in production, "local" for local dev
 UPLOADS_PATH          # local only — defaults to ./uploads
 R2_ACCOUNT_ID         # fd8b0a310ce4c92432537df62bcefbbf
-R2_ACCESS_KEY_ID
-R2_SECRET_ACCESS_KEY
+R2_ACCESS_KEY_ID      # from Cloudflare R2 → Manage R2 API Tokens
+R2_SECRET_ACCESS_KEY  # from Cloudflare R2 → Manage R2 API Tokens
 R2_BUCKET_NAME        # filevault
 R2_PUBLIC_URL         # https://pub-f641d19db8ee499bbce78fa8ab1c7e9e.r2.dev
 
@@ -141,7 +157,7 @@ R2_PUBLIC_URL         # https://pub-f641d19db8ee499bbce78fa8ab1c7e9e.r2.dev
 OPENROUTER_API_KEY    # model: openai/text-embedding-3-small
 
 # App
-NEXT_PUBLIC_BASE_URL      # http://localhost:3001 locally
+NEXT_PUBLIC_BASE_URL      # https://filevault-five.vercel.app in production
 NEXT_PUBLIC_BASE_DOMAIN   # filevault.host
 CRON_SECRET               # any random string
 
@@ -183,10 +199,14 @@ if (!result.success) return NextResponse.json({ error: result.error.flatten() },
 import { prisma } from '@/lib/prisma'
 ```
 
-**Vectors — serialize/deserialize:**
+**Vector queries — raw SQL only:**
 ```ts
-// Store:  vector: JSON.stringify(embedding)
-// Recall: JSON.parse(row.vector) as number[]
+// Insert: pass the embedding array as a bracketed string literal
+const vectorLiteral = `[${embedding.join(',')}]`
+await prisma.$executeRaw`INSERT INTO embeddings (vector, ...) VALUES (${vectorLiteral}::vector, ...)`
+
+// Search: use pgvector <=> cosine distance operator
+await prisma.$queryRaw`SELECT 1 - (vector <=> ${vectorLiteral}::vector) AS score FROM embeddings ORDER BY score DESC`
 ```
 
 **Error responses:**
@@ -199,13 +219,14 @@ import { prisma } from '@/lib/prisma'
 
 ## Migrations
 
-The DB is SQLite. Apply new migrations with:
-```bash
-sqlite3 prisma/filevault.db < prisma/migrations/<migration>/migration.sql
-npx prisma generate
-```
+The DB is PostgreSQL (Supabase). Prisma 7 uses `prisma.config.ts` for connection config (not `schema.prisma` env vars).
 
-After writing a new migration file, also record it in `_prisma_migrations` if the dev DB is already up.
+**Vercel deploys do NOT run migrations automatically.** For schema changes:
+1. Write the migration SQL in `prisma/migrations/<timestamp>_<name>/migration.sql`
+2. Run it in the Supabase SQL editor, or via: `DIRECT_URL=<direct_url> node node_modules/.bin/prisma migrate deploy`
+3. Run `npx prisma generate` locally to update the client
+
+`prisma.config.ts` prefers `DIRECT_URL` over `DATABASE_URL` so migrations bypass the pgbouncer connection pooler (required for DDL statements).
 
 ---
 
@@ -213,9 +234,11 @@ After writing a new migration file, also record it in `_prisma_migrations` if th
 
 - Middleware is `src/proxy.ts`, not `middleware.ts`
 - `AgentFile.metadata` is stored as a JSON **string** — `JSON.parse()` before returning
-- `Embedding.vector` and `Memory.vector` are JSON **strings** of `number[]`
+- Vectors use native pgvector `vector(1536)` — query with raw SQL `<=>` operator, never via Prisma typed fields
 - The R2 file-serving route 302-redirects to the CDN URL — files never stream through Next.js
 - Clerk is entirely optional; all `auth()` calls are wrapped in try/catch
+- `src/lib/prisma.ts` uses a lazy Proxy so `DATABASE_URL` is not required at Next.js build time — client is created on first use
+- `next.config.ts` has `output: 'standalone'` (added for Railway memory reduction, harmless on Vercel)
 
 ---
 
