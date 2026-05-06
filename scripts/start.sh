@@ -27,7 +27,7 @@ fi
 # Run Prisma migrations
 # prisma.config.ts already prefers DIRECT_URL over DATABASE_URL for the datasource URL
 echo "[deploy] Running Prisma migrations..."
-if node node_modules/.bin/prisma migrate deploy --skip-generate; then
+if node node_modules/.bin/prisma migrate deploy; then
   echo "[deploy] Migrations completed ✓"
 else
   echo "[deploy] ERROR: Migration failed!"
