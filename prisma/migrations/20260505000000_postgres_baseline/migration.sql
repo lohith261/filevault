@@ -160,15 +160,15 @@ CREATE INDEX IF NOT EXISTS "agent_states_agentId_key_idx" ON "agent_states"("age
 CREATE INDEX IF NOT EXISTS "embeddings_vector_hnsw_idx" ON "embeddings" USING hnsw ("vector" vector_cosine_ops) WITH (m = 16, ef_construction = 64);
 CREATE INDEX IF NOT EXISTS "memories_vector_hnsw_idx" ON "memories" USING hnsw ("vector" vector_cosine_ops) WITH (m = 16, ef_construction = 64);
 
-ALTER TABLE "site_files" ADD CONSTRAINT "site_files_siteId_fkey" FOREIGN KEY ("siteId") REFERENCES "sites"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "site_views" ADD CONSTRAINT "site_views_siteId_fkey" FOREIGN KEY ("siteId") REFERENCES "sites"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "agent_files" ADD CONSTRAINT "agent_files_agentId_fkey" FOREIGN KEY ("agentId") REFERENCES "agents"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "collections" ADD CONSTRAINT "collections_agentId_fkey" FOREIGN KEY ("agentId") REFERENCES "agents"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "collection_files" ADD CONSTRAINT "collection_files_collectionId_fkey" FOREIGN KEY ("collectionId") REFERENCES "collections"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "collection_files" ADD CONSTRAINT "collection_files_fileId_fkey" FOREIGN KEY ("fileId") REFERENCES "agent_files"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "agent_shares" ADD CONSTRAINT "agent_shares_ownerAgentId_fkey" FOREIGN KEY ("ownerAgentId") REFERENCES "agents"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "agent_shares" ADD CONSTRAINT "agent_shares_granteeAgentId_fkey" FOREIGN KEY ("granteeAgentId") REFERENCES "agents"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "embeddings" ADD CONSTRAINT "embeddings_agentId_fkey" FOREIGN KEY ("agentId") REFERENCES "agents"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "embeddings" ADD CONSTRAINT "embeddings_fileId_fkey" FOREIGN KEY ("fileId") REFERENCES "agent_files"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "memories" ADD CONSTRAINT "memories_agentId_fkey" FOREIGN KEY ("agentId") REFERENCES "agents"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "agent_states" ADD CONSTRAINT "agent_states_agentId_fkey" FOREIGN KEY ("agentId") REFERENCES "agents"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN ALTER TABLE "site_files" ADD CONSTRAINT "site_files_siteId_fkey" FOREIGN KEY ("siteId") REFERENCES "sites"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE "site_views" ADD CONSTRAINT "site_views_siteId_fkey" FOREIGN KEY ("siteId") REFERENCES "sites"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE "agent_files" ADD CONSTRAINT "agent_files_agentId_fkey" FOREIGN KEY ("agentId") REFERENCES "agents"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE "collections" ADD CONSTRAINT "collections_agentId_fkey" FOREIGN KEY ("agentId") REFERENCES "agents"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE "collection_files" ADD CONSTRAINT "collection_files_collectionId_fkey" FOREIGN KEY ("collectionId") REFERENCES "collections"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE "collection_files" ADD CONSTRAINT "collection_files_fileId_fkey" FOREIGN KEY ("fileId") REFERENCES "agent_files"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE "agent_shares" ADD CONSTRAINT "agent_shares_ownerAgentId_fkey" FOREIGN KEY ("ownerAgentId") REFERENCES "agents"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE "agent_shares" ADD CONSTRAINT "agent_shares_granteeAgentId_fkey" FOREIGN KEY ("granteeAgentId") REFERENCES "agents"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE "embeddings" ADD CONSTRAINT "embeddings_agentId_fkey" FOREIGN KEY ("agentId") REFERENCES "agents"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE "embeddings" ADD CONSTRAINT "embeddings_fileId_fkey" FOREIGN KEY ("fileId") REFERENCES "agent_files"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE "memories" ADD CONSTRAINT "memories_agentId_fkey" FOREIGN KEY ("agentId") REFERENCES "agents"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE "agent_states" ADD CONSTRAINT "agent_states_agentId_fkey" FOREIGN KEY ("agentId") REFERENCES "agents"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
