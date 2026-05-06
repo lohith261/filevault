@@ -18,25 +18,22 @@ fi
 
 echo "[deploy] DATABASE_URL is PostgreSQL ✓"
 
-# For migrations, Prisma uses DIRECT_URL if available (direct Supabase connection)
-# otherwise falls back to DATABASE_URL
-MIGRATION_URL="${DIRECT_URL:-$DATABASE_URL}"
 if [ -n "$DIRECT_URL" ]; then
-  echo "[deploy] Using DIRECT_URL for migrations (direct connection) ✓"
+  echo "[deploy] DIRECT_URL set — prisma.config.ts will use it for migrations ✓"
 else
-  echo "[deploy] WARNING: DIRECT_URL not set — using DATABASE_URL for migrations"
-  echo "[deploy]          If using Supabase, set DIRECT_URL to the direct port 5432 connection"
+  echo "[deploy] WARNING: DIRECT_URL not set — migrations will use DATABASE_URL (may fail with pgbouncer)"
 fi
 
-# Run Prisma migrations (no timeout — migrations need time)
+# Run Prisma migrations
+# prisma.config.ts already prefers DIRECT_URL over DATABASE_URL for the datasource URL
 echo "[deploy] Running Prisma migrations..."
-if npx prisma migrate deploy --skip-generate; then
+if node node_modules/.bin/prisma migrate deploy --skip-generate; then
   echo "[deploy] Migrations completed ✓"
 else
   echo "[deploy] ERROR: Migration failed!"
   exit 1
 fi
 
-# Start Next.js
+# Start Next.js using direct node invocation (npx/npm scripts have MODULE_NOT_FOUND issues)
 echo "[deploy] Starting Next.js on port ${PORT:-3000}..."
-exec npx next start -p "${PORT:-3000}"
+exec node node_modules/next/dist/bin/next start -p "${PORT:-3000}"
