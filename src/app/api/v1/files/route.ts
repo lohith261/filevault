@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    let indexed = false
+    const indexed = false
     if (shouldIndex) {
       await prisma.agentFile.update({
         where: { id: agentFile.id },

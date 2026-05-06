@@ -13,7 +13,9 @@ export default function AgentsPage() {
   // Read key from localStorage after hydration (avoids SSR mismatch)
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setApiKey(stored)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setReady(true)
   }, [])
 

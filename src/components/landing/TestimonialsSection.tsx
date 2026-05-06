@@ -27,7 +27,7 @@ export function TestimonialsSection() {
           {TESTIMONIALS.map((t) => (
             <div key={t.author} className="space-y-6">
               <blockquote className="text-xl sm:text-2xl font-medium text-[var(--foreground)] leading-snug tracking-tight">
-                "{t.quote}"
+                &ldquo;{t.quote}&rdquo;
               </blockquote>
               <div className="flex items-center gap-3">
                 <div className="h-8 w-8 rounded-sm bg-[var(--muted)] flex items-center justify-center">
