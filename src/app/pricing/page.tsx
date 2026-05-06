@@ -1,9 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { useAuth, SignInButton } from '@clerk/nextjs'
-
-const CLERK_CONFIGURED = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 
 function Check() {
   return (
@@ -21,82 +18,82 @@ function Cross() {
   )
 }
 
-function useSafeAuth() {
-  try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const { isSignedIn } = useAuth()
-    return { isSignedIn: isSignedIn ?? false }
-  } catch {
-    return { isSignedIn: false }
-  }
-}
-
 const plans = [
-  {
-    name: 'Anonymous',
-    price: 'Free',
-    description: 'No account needed. Just drop and share.',
-    features: [
-      { label: '5 MB file size limit', included: true },
-      { label: 'Links expire in 24 hours', included: true },
-      { label: 'Up to 3 uploads/day', included: true },
-      { label: 'All file types', included: true },
-      { label: 'Password protection', included: false },
-      { label: 'Custom link name', included: false },
-      { label: 'Unlimited links', included: false },
-    ],
-    cta: 'Upload now',
-    ctaHref: '/',
-    highlight: false,
-  },
   {
     name: 'Free',
     price: 'Free',
-    description: 'Sign up for more storage, password protection, and custom links.',
+    description: 'Everything you need to build and ship an agent in production.',
     features: [
-      { label: '10 MB file size limit', included: true },
-      { label: 'Links last 30 days', included: true },
-      { label: 'Up to 10 active links', included: true },
-      { label: 'All file types', included: true },
-      { label: 'Password protection', included: true },
-      { label: 'Custom link name', included: true },
-      { label: 'Unlimited links', included: false },
+      { label: '1,000 files per agent', included: true },
+      { label: '1 GB storage', included: true },
+      { label: '5,000 memories', included: true },
+      { label: 'Semantic search (pgvector)', included: true },
+      { label: 'File indexing & chunking', included: true },
+      { label: 'Collections & sharing', included: true },
+      { label: 'Webhooks', included: true },
+      { label: 'REST API + TypeScript SDK', included: true },
+      { label: 'Priority support', included: false },
+      { label: 'Higher rate limits', included: false },
     ],
-    cta: 'Create free account',
+    cta: 'Get your API key',
+    ctaHref: '/agents',
     highlight: false,
   },
   {
     name: 'Pro',
-    price: '₹399',
-    period: '/month',
-    description: 'For developers, designers, and teams who ship constantly.',
+    price: 'Coming soon',
+    description: 'For teams running agents at scale with higher throughput and SLA guarantees.',
     features: [
-      { label: '100 MB file size limit', included: true },
-      { label: 'Links never expire', included: true },
-      { label: 'Unlimited links', included: true },
-      { label: 'All file types', included: true },
-      { label: 'Password protection', included: true },
-      { label: 'Custom link name', included: true },
+      { label: 'Unlimited files', included: true },
+      { label: '50 GB storage', included: true },
+      { label: 'Unlimited memories', included: true },
+      { label: 'Semantic search (pgvector)', included: true },
+      { label: 'File indexing & chunking', included: true },
+      { label: 'Collections & sharing', included: true },
+      { label: 'Webhooks', included: true },
+      { label: 'REST API + TypeScript SDK', included: true },
       { label: 'Priority support', included: true },
+      { label: 'Higher rate limits', included: true },
     ],
-    cta: 'Get Pro',
-    ctaHref: '/dashboard',
+    cta: 'Join waitlist',
+    ctaHref: 'mailto:support@filevault.host?subject=Pro waitlist',
     highlight: true,
+  },
+  {
+    name: 'Enterprise',
+    price: 'Custom',
+    description: 'Custom limits, dedicated infrastructure, and SLA for large deployments.',
+    features: [
+      { label: 'Custom file & storage limits', included: true },
+      { label: 'Custom memory limits', included: true },
+      { label: 'Dedicated infrastructure', included: true },
+      { label: 'Semantic search (pgvector)', included: true },
+      { label: 'File indexing & chunking', included: true },
+      { label: 'Collections & sharing', included: true },
+      { label: 'Webhooks', included: true },
+      { label: 'REST API + TypeScript SDK', included: true },
+      { label: 'Dedicated support + SLA', included: true },
+      { label: 'Custom rate limits', included: true },
+    ],
+    cta: 'Contact us',
+    ctaHref: 'mailto:support@filevault.host?subject=Enterprise inquiry',
+    highlight: false,
   },
 ]
 
 export default function PricingPage() {
-  const { isSignedIn } = useSafeAuth()
-
   return (
     <div className="mx-auto max-w-5xl px-4 pt-28 pb-24">
       {/* Header */}
       <div className="mb-14 text-center">
+        <p className="text-[11px] font-mono uppercase tracking-[0.15em] text-[var(--muted-foreground)] mb-3">
+          Pricing
+        </p>
         <h1 className="text-4xl font-bold tracking-tight text-[var(--foreground)]">
-          Simple, honest pricing
+          Storage infrastructure for AI agents
         </h1>
-        <p className="mt-3 text-[var(--muted-foreground)]">
-          No surprise fees. Start free, upgrade when you need more.
+        <p className="mt-3 text-[var(--muted-foreground)] max-w-xl mx-auto">
+          Start free. One API key gives your agent files, memory, and semantic search — no infrastructure to manage.
         </p>
       </div>
 
@@ -121,9 +118,6 @@ export default function PricingPage() {
               <p className="text-sm font-medium text-[var(--muted-foreground)]">{plan.name}</p>
               <div className="mt-1 flex items-baseline gap-1">
                 <span className="text-3xl font-bold text-[var(--foreground)]">{plan.price}</span>
-                {plan.period && (
-                  <span className="text-sm text-[var(--muted-foreground)]">{plan.period}</span>
-                )}
               </div>
               <p className="mt-2 text-xs text-[var(--muted-foreground)] leading-relaxed">
                 {plan.description}
@@ -141,49 +135,27 @@ export default function PricingPage() {
               ))}
             </ul>
 
-            {plan.name === 'Anonymous' && (
-              <Link
-                href={plan.ctaHref!}
-                className="block w-full rounded-lg border border-[var(--border)] py-2 text-center text-sm font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"
-              >
-                {plan.cta}
-              </Link>
-            )}
-
-            {plan.name === 'Free' && (
-              isSignedIn ? (
-                <Link
-                  href="/dashboard"
-                  className="block w-full rounded-lg border border-[var(--border)] py-2 text-center text-sm font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"
-                >
-                  Go to dashboard
-                </Link>
-              ) : CLERK_CONFIGURED ? (
-                <SignInButton mode="modal">
-                  <button className="w-full rounded-lg border border-[var(--border)] py-2 text-sm font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]">
-                    {plan.cta}
-                  </button>
-                </SignInButton>
-              ) : (
-                <Link
-                  href="/sign-up"
-                  className="block w-full rounded-lg border border-[var(--border)] py-2 text-center text-sm font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"
-                >
-                  {plan.cta}
-                </Link>
-              )
-            )}
-
-            {plan.name === 'Pro' && (
-              <Link
-                href={plan.ctaHref!}
-                className="block w-full rounded-lg bg-[var(--primary)] py-2 text-center text-sm font-medium text-[var(--primary-foreground)] transition-opacity hover:opacity-90"
-              >
-                {plan.cta}
-              </Link>
-            )}
+            <Link
+              href={plan.ctaHref}
+              className={`block w-full rounded-lg py-2 text-center text-sm font-medium transition-opacity ${
+                plan.highlight
+                  ? 'bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90'
+                  : 'border border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--muted)]'
+              }`}
+            >
+              {plan.cta}
+            </Link>
           </div>
         ))}
+      </div>
+
+      {/* Rate limits note */}
+      <div className="mt-10 rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
+        <p className="text-xs font-mono text-[var(--muted-foreground)] text-center">
+          Free tier rate limit: <span className="text-[var(--foreground)]">20 uploads / minute</span> per agent &nbsp;·&nbsp;
+          Max file size: <span className="text-[var(--foreground)]">50 MB</span> &nbsp;·&nbsp;
+          All plans include the full API surface
+        </p>
       </div>
 
       {/* FAQ */}
@@ -194,28 +166,28 @@ export default function PricingPage() {
         <div className="grid gap-4 sm:grid-cols-2">
           {[
             {
-              q: 'Do I need an account to upload?',
-              a: 'No. You can upload up to 5 MB files without an account. They expire after 24 hours.',
+              q: 'What is an agent?',
+              a: 'An agent is an API identity — you create one and get a secret key (fv_sk_...). Each agent has its own isolated storage, memory, and search index.',
             },
             {
-              q: 'What happens when a link expires?',
-              a: 'The link stops working and the files are automatically deleted from storage.',
+              q: 'How does semantic search work?',
+              a: 'When you upload a file with index=true, FileVault extracts text, chunks it, and stores embeddings in pgvector. Search queries run cosine similarity against those embeddings.',
             },
             {
-              q: 'Can I use a custom subdomain?',
-              a: 'Yes — any signed-in user can choose a custom link name like myproject.filevault.host.',
+              q: 'What file types can be indexed?',
+              a: 'HTML, plain text, PDF, and JSON files are extracted and indexed. All other file types are stored and retrievable but not semantically searchable.',
             },
             {
-              q: 'What file types are supported?',
-              a: 'HTML files, ZIP archives (with HTML + assets), PDFs, images, and most static file types.',
+              q: 'What are memories?',
+              a: 'Memories are arbitrary text snippets your agent stores with an embedding attached — useful for conversation history, facts, or any unstructured knowledge your agent wants to recall later.',
             },
             {
-              q: 'How does password protection work?',
-              a: 'Set a password when uploading. Visitors see a prompt before they can view the content.',
+              q: 'Is there a TypeScript SDK?',
+              a: 'Yes. Import the FileVault class from the SDK, pass your API key, and get typed methods for every API endpoint — upload, search, memory, collections, and more.',
             },
             {
-              q: 'Can I cancel Pro at any time?',
-              a: 'Yes. Cancel anytime from your dashboard. Links stay live until the billing period ends, then switch to 30-day expiry.',
+              q: 'When does Pro launch?',
+              a: 'We\'re targeting Pro in the coming weeks. Join the waitlist and you\'ll be first to know — and get early pricing.',
             },
           ].map(({ q, a }) => (
             <div key={q} className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">

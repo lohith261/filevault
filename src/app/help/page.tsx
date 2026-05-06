@@ -5,75 +5,105 @@ const sections = [
     title: 'Getting started',
     items: [
       {
-        q: 'How do I host a file?',
-        a: 'Drag and drop any HTML or ZIP file onto the upload box on the home page, or click to browse. Your link is ready in a few seconds — no account required.',
+        q: 'What is FileVault?',
+        a: 'FileVault is a storage API for AI agents. Each agent gets an isolated namespace with file storage, semantic search, and persistent memory — all accessible via a single REST API or TypeScript SDK.',
       },
       {
-        q: 'What file types can I upload?',
-        a: 'You can upload a single HTML file, or a ZIP archive containing HTML, CSS, JavaScript, images, and other static assets. FileVault will automatically detect and serve the right entry file.',
+        q: 'How do I create an agent?',
+        a: 'Send a POST request to /api/v1/agents with a name field. You\'ll receive a secret API key (fv_sk_...) once — store it immediately. All subsequent requests authenticate with this key via the Authorization: Bearer header.',
       },
       {
-        q: 'How do I share my link?',
-        a: 'After uploading you\'ll see your link (e.g. abc123.filevault.host). Copy it or use the one-click copy button. Anyone with the link can view your site.',
+        q: 'How do I authenticate API requests?',
+        a: 'Pass your agent key in every request header: Authorization: Bearer fv_sk_your_key_here. Requests without a valid key return 401 Unauthorized.',
       },
       {
-        q: 'Do I need to create an account?',
-        a: 'No account is required to upload. Anonymous uploads support files up to 5 MB and expire after 24 hours. Signing up gives you larger files, longer expiry, password protection, and custom link names.',
+        q: 'Is there a TypeScript SDK?',
+        a: 'Yes. Import the FileVault class from the SDK, pass your API key, and get fully typed methods for every endpoint — upload, search, memory, collections, webhooks, and more. No raw fetch required.',
       },
     ],
   },
   {
-    title: 'Files & limits',
+    title: 'Files & storage',
     items: [
+      {
+        q: 'How do I upload a file?',
+        a: 'POST to /api/v1/files with a multipart form containing the file field. Add index=true to automatically extract and embed the file content for semantic search. You can also attach arbitrary JSON metadata.',
+      },
+      {
+        q: 'How do I upload multiple files at once?',
+        a: 'POST to /api/v1/files/batch with up to 10 files in a files[] field. The response includes a result entry per file, with partial success (207) if some files fail.',
+      },
       {
         q: 'What is the file size limit?',
-        a: 'Anonymous users: 5 MB. Free accounts: 10 MB. Pro accounts: 100 MB. If your ZIP contains many assets, the total uncompressed size is what counts.',
+        a: 'Each file can be up to 50 MB. Per-agent limits are 1,000 files and 1 GB total storage on the free tier.',
       },
       {
-        q: 'How long do links stay live?',
-        a: 'Anonymous uploads expire after 24 hours. Free accounts get 30 days. Pro links never expire (unless you delete them).',
+        q: 'How do I retrieve or delete a file?',
+        a: 'GET /api/v1/files/:id returns metadata and a download URL. DELETE /api/v1/files/:id removes the file and all associated embeddings from storage.',
       },
       {
-        q: 'How many links can I create?',
-        a: 'Anonymous users can upload up to 3 times per day from the same IP. Free accounts can have up to 10 active links. Pro accounts have no limit.',
-      },
-      {
-        q: 'Can I delete a link early?',
-        a: 'Yes — signed-in users can delete any of their links from the dashboard at any time.',
+        q: 'What file types are supported?',
+        a: 'All file types are stored. For indexing and semantic search, FileVault extracts text from HTML, plain text, PDF, and JSON files. Other types are stored and downloadable but not searchable.',
       },
     ],
   },
   {
-    title: 'Custom links & subdomains',
+    title: 'Semantic search',
     items: [
       {
-        q: 'Can I choose my own link name?',
-        a: 'Yes, if you have a free or Pro account. In the upload options, enter a custom link name (e.g. "my-portfolio") and your site will be live at my-portfolio.filevault.host.',
+        q: 'How does indexing work?',
+        a: 'When you upload with index=true (or call POST /api/v1/files/:id/index later), FileVault extracts text from the file, splits it into chunks, generates embeddings via OpenRouter, and stores them in a pgvector index.',
       },
       {
-        q: 'Are there restrictions on custom link names?',
-        a: 'Custom names must be 3–30 characters, lowercase letters, numbers, and hyphens only. They can\'t start or end with a hyphen, contain consecutive hyphens, or use reserved names like "api", "admin", or "dashboard".',
+        q: 'How do I run a semantic search?',
+        a: 'POST to /api/v1/search with a query string. FileVault embeds your query and returns the most similar chunks ranked by cosine similarity. Filter by file_id, collection_id, metadata fields, or include shared agent content with include_shared=true.',
       },
       {
-        q: 'What if my chosen name is already taken?',
-        a: 'You\'ll see an error when you try to upload. Choose a different name and try again.',
+        q: 'How do I search only within a specific file or collection?',
+        a: 'Pass file_id or collection_id in the search request body to scope results. You can combine filters — e.g. search within a collection while filtering by a metadata tag.',
       },
     ],
   },
   {
-    title: 'Password protection',
+    title: 'Memory',
     items: [
       {
-        q: 'How do I add a password to my site?',
-        a: 'Click "Options" on the upload card, then enter a password in the password field before uploading. Visitors will be asked for the password before they can view the site.',
+        q: 'What is agent memory?',
+        a: 'Memory lets your agent store arbitrary text snippets with an embedding attached — conversation turns, extracted facts, decisions, or any knowledge it wants to recall later. Each memory can optionally expire.',
       },
       {
-        q: 'Can I change the password after uploading?',
-        a: 'Not currently. To change a password, delete the existing link and re-upload with a new one.',
+        q: 'How do I store and retrieve memories?',
+        a: 'POST to /api/v1/memory with a content string (and optional expiresAt). GET /api/v1/memory returns a paginated list. Memories are also included in semantic search results — use type=memory in the search request to search only memories.',
       },
       {
-        q: 'Is password protection available on the free plan?',
-        a: 'Yes — password protection is available to all signed-in users on the free plan and above. It is not available for anonymous uploads.',
+        q: 'How many memories can an agent have?',
+        a: 'Up to 5,000 active memories on the free tier. Expired memories don\'t count toward the limit.',
+      },
+    ],
+  },
+  {
+    title: 'Collections & sharing',
+    items: [
+      {
+        q: 'What are collections?',
+        a: 'Collections are named groups of files within your agent\'s namespace. Use them to organise files by project, topic, or workflow — and to scope searches to a specific subset of your storage.',
+      },
+      {
+        q: 'How do I share data between agents?',
+        a: 'POST to /api/v1/shares with another agent\'s agent_id to grant it read access to your files and embeddings. The grantee can then include your content in searches using include_shared=true.',
+      },
+    ],
+  },
+  {
+    title: 'Webhooks',
+    items: [
+      {
+        q: 'What events fire webhooks?',
+        a: 'FileVault fires a webhook on file.created after every successful upload. The payload includes file_id, name, size_bytes, and is_indexed.',
+      },
+      {
+        q: 'How do I register a webhook?',
+        a: 'PUT to /api/v1/webhooks with a url field. FileVault will POST events to that URL as they happen. Use DELETE /api/v1/webhooks to remove it.',
       },
     ],
   },
@@ -81,20 +111,20 @@ const sections = [
     title: 'Troubleshooting',
     items: [
       {
-        q: 'My ZIP uploaded but the site shows a blank page.',
-        a: 'FileVault looks for index.html at the root of your ZIP. Make sure your entry file is named index.html and is not inside a sub-folder. Some tools (e.g. macOS Archive Utility) wrap files in an extra folder — try zipping with a different tool.',
+        q: 'I\'m getting 401 Unauthorized.',
+        a: 'Check that your Authorization header is exactly: Bearer fv_sk_your_key. The key is shown only once at agent creation — if you lost it, create a new agent.',
       },
       {
-        q: 'My images or styles aren\'t loading.',
-        a: 'Check that all asset paths in your HTML are relative (e.g. ./style.css, not /style.css or an absolute URL). Absolute paths won\'t resolve correctly on a subdomain.',
+        q: 'My file uploaded but search returns no results.',
+        a: 'The file must be indexed first. Either upload with index=true, or call POST /api/v1/files/:id/index after the fact. Check the index_status field on the file — it will be pending, indexed, or failed.',
       },
       {
-        q: 'I\'m getting a "file too large" error.',
-        a: 'Your file exceeds the limit for your plan. Sign in for a higher limit, or upgrade to Pro for up to 100 MB.',
+        q: 'I\'m hitting rate limits.',
+        a: 'The free tier allows 20 uploads per minute per agent. If you hit the limit, the API returns 429 with a Retry-After header. Batch uploads (/api/v1/files/batch) count as one request for up to 10 files.',
       },
       {
-        q: 'My link shows "Not found" even though I just uploaded.',
-        a: 'Double-check you\'re visiting the right URL. If you used a custom slug, make sure the spelling matches exactly. If the issue persists, email us.',
+        q: 'How do I check my current usage?',
+        a: 'GET /api/v1/usage returns your current file count, indexed file count, storage bytes used, and memory count — all in a single call.',
       },
     ],
   },
@@ -105,9 +135,12 @@ export default function HelpPage() {
     <div className="mx-auto max-w-3xl px-4 pt-28 pb-24">
       {/* Header */}
       <div className="mb-12 text-center">
+        <p className="text-[11px] font-mono uppercase tracking-[0.15em] text-[var(--muted-foreground)] mb-3">
+          Documentation
+        </p>
         <h1 className="text-4xl font-bold tracking-tight text-[var(--foreground)]">Help &amp; FAQ</h1>
         <p className="mt-3 text-[var(--muted-foreground)]">
-          Everything you need to know about using FileVault.
+          Everything you need to build with the FileVault Agent API.
         </p>
       </div>
 
@@ -122,6 +155,27 @@ export default function HelpPage() {
             {s.title}
           </a>
         ))}
+      </div>
+
+      {/* Quick start snippet */}
+      <div className="mb-14 rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
+        <p className="text-xs font-mono text-[var(--muted-foreground)] mb-3 uppercase tracking-widest">Quick start</p>
+        <pre className="text-xs font-mono text-[var(--foreground)] overflow-x-auto leading-relaxed whitespace-pre">{`# 1. Create an agent
+curl -X POST https://filevault.host/api/v1/agents \\
+  -H "Content-Type: application/json" \\
+  -d '{"name":"my-agent"}'
+
+# 2. Upload a file (with semantic indexing)
+curl -X POST https://filevault.host/api/v1/files \\
+  -H "Authorization: Bearer fv_sk_..." \\
+  -F "file=@report.pdf" \\
+  -F "index=true"
+
+# 3. Search
+curl -X POST https://filevault.host/api/v1/search \\
+  -H "Authorization: Bearer fv_sk_..." \\
+  -H "Content-Type: application/json" \\
+  -d '{"query":"quarterly revenue"}'`}</pre>
       </div>
 
       {/* Sections */}
