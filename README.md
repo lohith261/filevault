@@ -285,7 +285,7 @@ All limits return `429` with a descriptive `error` field.
 | `PUT` | `/v1/webhooks` | Set webhook URL |
 | `DELETE` | `/v1/webhooks` | Remove webhook |
 
-**Events:** `file.created`, `file.deleted`, `file.indexed`, `memory.created`
+**Events:** `file.created`, `file.deleted`, `file.indexed`
 
 ### Usage
 
@@ -359,8 +359,10 @@ npx prisma generate
 ### 4. Start dev server
 
 ```bash
-npm run dev
+node node_modules/next/dist/bin/next dev
 ```
+
+> `npm run dev` and `npx next dev` fail with MODULE_NOT_FOUND on this Next.js 16 build. Use the full path above.
 
 Open [http://localhost:3000](http://localhost:3000).
 
@@ -382,21 +384,22 @@ npm test
 
 ### Vercel (recommended)
 
+Production runs at **[filevault.host](https://filevault.host)** on Vercel with GitHub auto-deploy on every push to `main`.
+
 1. Import the GitHub repo into Vercel
-2. Set all environment variables in **Project → Settings → Environment Variables**
-3. Add `STORAGE_DRIVER=r2` and the five R2 vars
-4. Add `OPENROUTER_API_KEY`
-5. Deploy
+2. Set all environment variables in **Project → Settings → Environment Variables** (see `.env.example` for the full list)
+3. Set `STORAGE_DRIVER=r2` and all five R2 vars — Vercel is serverless, local disk won't work
+4. Deploy
 
-> **Note:** `prisma migrate deploy` does **not** run during the Vercel build. You must run it manually once after first deploy (e.g. via Vercel CLI or a one-off script), or use a platform like Railway that runs it at container start.
+> **Migrations:** `prisma migrate deploy` does **not** run during the Vercel build. Run new migrations manually via the Supabase SQL editor or: `DIRECT_URL=<direct_url> node node_modules/.bin/prisma migrate deploy`
 
-### Railway
+### Railway (secondary)
 
-1. **Deploy from GitHub repo** → Railway auto-detects `railway.json`
-2. Provision a **PostgreSQL** database (Railway plugin or external)
-3. Add `DATABASE_URL` pointing to your Postgres instance
-4. Add `UPLOADS_PATH=/app/uploads` and mount a Volume at `/app/uploads`
-5. Add all other env vars
+`railway.json` and `scripts/start.sh` are still in the repo but Railway is no longer the primary target.
+
+1. Deploy from GitHub repo → Railway auto-detects `railway.json`
+2. Add all env vars (see `.env.example`)
+3. `scripts/start.sh` runs `prisma migrate deploy` then starts the server
 
 ---
 
