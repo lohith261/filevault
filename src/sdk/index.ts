@@ -35,7 +35,7 @@ export interface SearchResult {
 }
 
 export interface MemoryRecord {
-  id: string
+  memory_id: string
   content: string
   created_at: string
   expires_at: string | null
@@ -290,13 +290,21 @@ class MemoryClient {
     const res = await fetch(`${this.baseUrl}/api/v1/memory`, {
       method: 'POST',
       headers: this.headers(),
-      body: JSON.stringify({ content, ttl_seconds: options.ttl_seconds }),
+      body: JSON.stringify({ content, ttl: options.ttl_seconds }),
     })
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: res.statusText }))
       throw new FileVaultError(res.status, err.error ?? res.statusText)
     }
     return res.json()
+  }
+
+  async delete(memoryId: string): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/api/v1/memory/${memoryId}`, {
+      method: 'DELETE',
+      headers: this.headers(),
+    })
+    if (!res.ok && res.status !== 204) throw new FileVaultError(res.status, await res.text())
   }
 }
 

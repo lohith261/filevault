@@ -120,6 +120,7 @@ Vectors use native pgvector `Unsupported("vector(1536)")` in the schema. All vec
 | `POST` | `/api/v1/search` | Semantic search — filters: `file_id`, `type`, `metadata`, `collection_id`, `include_shared` |
 | `POST` | `/api/v1/memory` | Store a memory with embedding |
 | `GET` | `/api/v1/memory` | List memories (paginated) |
+| `DELETE` | `/api/v1/memory/[id]` | Delete a single memory entry |
 | `GET` | `/api/v1/usage` | File count, indexed count, storage bytes, memory count |
 | `GET` | `/api/v1/webhooks` | Get webhook URL |
 | `PUT` | `/api/v1/webhooks` | Register/update webhook URL |

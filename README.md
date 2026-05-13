@@ -246,6 +246,7 @@ All limits return `429` with a descriptive `error` field.
 |---|---|---|
 | `POST` | `/v1/memory` | Store memory |
 | `GET` | `/v1/memory?limit=&cursor=` | List memories |
+| `DELETE` | `/v1/memory/:id` | Delete a memory entry |
 
 ### State / Checkpoints
 

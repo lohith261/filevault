@@ -92,7 +92,7 @@ class SearchResult(dict):
 class MemoryRecord(dict):
     @property
     def id(self) -> str:
-        return self["id"]
+        return self["memory_id"]
 
     @property
     def content(self) -> str:
@@ -343,8 +343,12 @@ class MemoryClient(_BaseClient):
     def add(self, content: str, *, ttl_seconds: int | None = None) -> MemoryRecord:
         body: dict[str, Any] = {"content": content}
         if ttl_seconds is not None:
-            body["ttl_seconds"] = ttl_seconds
+            body["ttl"] = ttl_seconds
         return MemoryRecord(self._request("POST", "/memory", body))
+
+    def delete(self, memory_id: str) -> None:
+        """Delete a single memory entry."""
+        self._request("DELETE", f"/memory/{memory_id}")
 
 
 # ── Collections sub-client ────────────────────────────────────────────────────

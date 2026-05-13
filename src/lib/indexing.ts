@@ -28,16 +28,24 @@ export async function indexFile(
   const chunks = chunkText(text)
   if (chunks.length === 0) return { indexed: false, chunksCreated: 0 }
 
-  await Promise.all(
-    chunks.map(async (chunk) => {
-      const vector = await generateEmbedding(chunk)
-      const vectorLiteral = `[${vector.join(',')}]`
-      await prisma.$executeRaw`
-        INSERT INTO embeddings (id, agent_id, file_id, content, vector, created_at)
-        VALUES (${crypto.randomUUID()}, ${agentId}, ${fileId}, ${chunk}, ${vectorLiteral}::vector, NOW())
-      `
-    })
-  )
+  // Delete any existing embeddings for this file before re-indexing (idempotency)
+  await prisma.$executeRaw`DELETE FROM embeddings WHERE file_id = ${fileId}`
+
+  // Embed in batches of 5 to avoid OpenRouter rate limits
+  const BATCH_SIZE = 5
+  for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+    const batch = chunks.slice(i, i + BATCH_SIZE)
+    await Promise.all(
+      batch.map(async (chunk) => {
+        const vector = await generateEmbedding(chunk)
+        const vectorLiteral = `[${vector.join(',')}]`
+        await prisma.$executeRaw`
+          INSERT INTO embeddings (id, agent_id, file_id, content, vector, created_at)
+          VALUES (${crypto.randomUUID()}, ${agentId}, ${fileId}, ${chunk}, ${vectorLiteral}::vector, NOW())
+        `
+      })
+    )
+  }
 
   logger.info('file indexed', { agentId, fileId, chunks: chunks.length })
   return { indexed: true, chunksCreated: chunks.length }

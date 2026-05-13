@@ -26,6 +26,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     mime_type: file.mimeType,
     size_bytes: Number(file.sizeBytes),
     is_indexed: file.isIndexed,
+    index_status: file.indexStatus,
     metadata: file.metadata ? JSON.parse(file.metadata) : null,
     url: file.storageKey.startsWith('https://') ? file.storageKey : `${baseUrl}/v1/files/${file.id}`,
     created_at: file.createdAt,

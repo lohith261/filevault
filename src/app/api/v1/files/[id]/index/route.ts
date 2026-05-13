@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { after } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { resolveAgent } from '@/lib/auth/apiKey'
 import { storageDriver } from '@/lib/storage'
@@ -8,7 +9,8 @@ export const maxDuration = 60
 
 type Params = { params: Promise<{ id: string }> }
 
-// POST /v1/files/:id/index — index an already-uploaded file on demand
+// POST /v1/files/:id/index — queue indexing for an already-uploaded file
+// Returns immediately with index_status: "pending"; poll GET /v1/files/:id for progress.
 export async function POST(req: NextRequest, { params }: Params) {
   const agentId = await resolveAgent(req.headers.get('authorization'))
   if (!agentId) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
@@ -18,7 +20,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (!file) return NextResponse.json({ error: 'File not found.' }, { status: 404 })
 
   if (file.indexStatus === 'indexed' || file.isIndexed) {
-    return NextResponse.json({ already_indexed: true, file_id: file.id })
+    return NextResponse.json({ already_indexed: true, file_id: file.id, index_status: 'indexed' })
   }
 
   if (file.indexStatus === 'pending' || file.indexStatus === 'indexing') {
@@ -32,15 +34,18 @@ export async function POST(req: NextRequest, { params }: Params) {
     const stream = await storageDriver.getFileStream(file.storageKey)
     const buffer = await streamToBuffer(stream)
 
-    await runIndexingJob(agentId, file.id, buffer, file.mimeType, file.name)
+    await prisma.agentFile.update({
+      where: { id: file.id },
+      data: { indexStatus: 'pending' },
+    })
 
-    const updated = await prisma.agentFile.findUnique({ where: { id: file.id } })
+    after(async () => {
+      await runIndexingJob(agentId, file.id, buffer, file.mimeType, file.name)
+    })
 
     return NextResponse.json({
       file_id: file.id,
-      indexed: updated?.indexStatus === 'indexed',
-      index_status: updated?.indexStatus,
-      chunks_created: updated?.indexStatus === 'indexed' ? await prisma.embedding.count({ where: { fileId: file.id } }) : 0,
+      index_status: 'pending',
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Indexing failed.'
