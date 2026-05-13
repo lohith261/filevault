@@ -1,33 +1,48 @@
-# FileVault
+<div align="center">
+  <img src="./public/logo.png" width="140" alt="FileVault" />
+  <h1>FileVault</h1>
+  <p><strong>The storage layer AI agents actually need.</strong><br/>
+  Files · Memory · Semantic Search · Agent-to-Agent Sharing — one API.</p>
 
-> **The storage layer AI agents actually need.**
->
-> Files, memory, semantic search, and agent-to-agent sharing — one API.
+  [![Next.js](https://img.shields.io/badge/Next.js_16-black?logo=next.js&logoColor=white)](https://nextjs.org)
+  [![TypeScript](https://img.shields.io/badge/TypeScript_5-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+  [![pgvector](https://img.shields.io/badge/pgvector-4169e1?logo=postgresql&logoColor=white)](https://github.com/pgvector/pgvector)
+  [![Cloudflare R2](https://img.shields.io/badge/Cloudflare_R2-f38020?logo=cloudflare&logoColor=white)](https://www.cloudflare.com/developer-platform/r2/)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-22c55e)](LICENSE)
 
-[![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://www.typescriptlang.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-
-→ **[filevault.host](https://filevault.host)**
+  **[→ filevault.host](https://filevault.host)** &nbsp;·&nbsp; [Docs](/help) &nbsp;·&nbsp; [Pricing](/pricing)
+</div>
 
 ---
 
-## What is FileVault?
+## The problem
 
-Most AI agents are stateless. They lose context between runs. They store files in S3 (dumb blobs) and memories in Pinecone (dumb vectors) — and neither talks to the other.
+Most AI agents are stateless by default. Between runs they lose context. Files live in S3 (dumb blobs), memories live in Pinecone (dumb vectors) — and neither knows about the other. Stitching them together means custom auth, a custom sync layer, and custom rate limiting. Every. Single. Time.
 
-**FileVault is different.** We built the storage layer that treats agents as first-class citizens:
+**FileVault is the storage infrastructure that treats agents as first-class citizens.**
 
-- **Identity** — every agent gets an API key and its own namespace
-- **Files** — upload anything; we extract, chunk, and embed automatically
-- **Memory** — persistent working memory with TTL
-- **Semantic Search** — natural language queries across files and memory
-- **Collections** — scoped knowledge groups
-- **Agent-to-Agent Sharing** — grant read access to your indexed files
-- **State / Checkpoints** — save and resume execution state
-- **MCP Server** — plug into Claude Desktop, Cursor, Cline, and any MCP client
+| Without FileVault | With FileVault |
+|---|---|
+| S3 + Pinecone + Redis + custom auth | One API key |
+| Build your own chunking & embedding pipeline | Upload → indexed automatically |
+| Manual cross-agent credential sharing | `POST /v1/shares` |
+| Rebuild memory on every session | Persistent memory with TTL |
+| Duct tape between services | One REST API, two SDKs, one MCP server |
 
-No more stitching together S3 + Pinecone + Redis + custom auth.
+---
+
+## Features
+
+| | Capability | Detail |
+|---|---|---|
+| 📁 | **Semantic File Storage** | Upload any file; text is extracted, chunked, and embedded automatically |
+| 🧠 | **Agent Memory** | Persistent key/value memory with TTL — survives across sessions |
+| 🔍 | **Semantic Search** | Natural language queries via pgvector HNSW · <50ms p99 |
+| 🗂️ | **Collections** | Scope search to a project, client, or topic |
+| 🤝 | **Agent-to-Agent Sharing** | Grant read access to your embeddings without sharing credentials |
+| 💾 | **State / Checkpoints** | Save and resume agent execution state |
+| 🪝 | **Webhooks** | Receive events for `file.created`, `file.indexed`, `file.deleted` |
+| 🔌 | **MCP Server** | Works out-of-the-box with Claude Desktop, Cursor, Cline |
 
 ---
 
@@ -67,7 +82,7 @@ curl -X POST https://filevault.host/api/v1/search \
 curl -X POST https://filevault.host/api/v1/memory \
   -H "Authorization: Bearer fv_sk_..." \
   -H "Content-Type: application/json" \
-  -d '{"content": "User prefers concise bullet points."}'
+  -d '{"content": "User prefers concise bullet points.", "ttl": 86400}'
 ```
 
 ---
@@ -81,13 +96,21 @@ import { FileVault } from '@filevault/sdk'
 
 const fv = new FileVault('fv_sk_...')
 
+// Upload and index
 const file = await fv.files.upload(blob, { index: true, metadata: { project: 'q3' } })
+
+// Semantic search
 const results = await fv.search('What is the refund policy?')
+
+// Persistent memory
 await fv.memory.add('User prefers concise responses.', { ttl_seconds: 86400 })
+
+// Delete a memory
+await fv.memory.delete(memoryId)
 
 // Iterate all files with auto-pagination
 for await (const f of fv.files.iter()) {
-  console.log(f.name)
+  console.log(f.name, f.index_status)
 }
 ```
 
@@ -98,11 +121,22 @@ from filevault import FileVault
 
 fv = FileVault("fv_sk_...")
 
-file = fv.files.upload(open("report.pdf", "rb"), name="report.pdf", index=True)
-results = fv.search("What is the refund policy?")
-fv.memory.add("User prefers concise responses.", ttl_seconds=86400)
+# Upload and index
+with open("report.pdf", "rb") as f:
+    file = fv.files.upload(f, name="report.pdf", index=True)
 
-# Iterate all files with auto-pagination
+# Semantic search
+results = fv.search("What is the refund policy?")
+for r in results:
+    print(f"{r.score:.2f}  {r.content[:80]}")
+
+# Persistent memory
+fv.memory.add("User prefers metric units", ttl_seconds=86400 * 30)
+
+# Delete a memory
+fv.memory.delete(memory_id)
+
+# Iterate all files
 for f in fv.files.iter():
     print(f.name)
 ```
@@ -111,9 +145,9 @@ for f in fv.files.iter():
 
 ## MCP Server
 
-FileVault exposes an MCP server so any compatible client can use it without code.
+FileVault exposes an MCP server so any compatible client can use it without writing code.
 
-**Claude Desktop config:**
+**Claude Desktop config (`~/.claude/claude_desktop_config.json`):**
 
 ```json
 {
@@ -126,8 +160,6 @@ FileVault exposes an MCP server so any compatible client can use it without code
   }
 }
 ```
-
-**Available MCP tools:**
 
 | Tool | Description |
 |---|---|
@@ -142,54 +174,34 @@ FileVault exposes an MCP server so any compatible client can use it without code
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     Next.js 16 (Vercel)                      │
-│                                                              │
-│  AI Agent → /v1/agents   (create identity)                   │
-│           → /v1/files    (upload + index)                    │
-│           → /v1/search   (semantic retrieval)                │
-│           → /v1/memory   (store + recall)                    │
-│           → /v1/state    (checkpoints)                       │
-│           → /v1/shares   (cross-agent access)                │
-│           → /v1/collections (scoped groups)                  │
-│                                                              │
-└────────────┬──────────────────────────────┬─────────────────┘
-             │                              │
-      PostgreSQL + pgvector           Cloudflare R2
-      (vectors + relational)          (object storage)
-             │
-    ┌────────┴────────────────────┐
-    │  Embedding pipeline          │
-    │  extract → chunk → embed     │
-    │  (OpenRouter / text-embed)   │
-    └──────────────────────────────┘
+┌────────────────────────────────────────────────────────────┐
+│                    Next.js 16 (Vercel)                      │
+│                                                             │
+│  Agent → POST /v1/agents    create identity                 │
+│       → POST /v1/files      upload + index                  │
+│       → POST /v1/search     semantic retrieval              │
+│       → POST /v1/memory     store + recall                  │
+│       → POST /v1/state      checkpoints                     │
+│       → POST /v1/shares     cross-agent access              │
+│       → GET  /v1/collections scoped groups                  │
+│                                                             │
+└───────────────┬──────────────────────────┬─────────────────┘
+                │                          │
+       PostgreSQL + pgvector         Cloudflare R2
+       (vectors + metadata)          (object storage)
+                │
+     ┌──────────┴────────────────┐
+     │   Embedding pipeline       │
+     │   extract → chunk → embed  │
+     │   OpenRouter · text-emb-3  │
+     └───────────────────────────┘
 ```
 
 ---
 
 ## Agent API Reference (v1)
 
-Every endpoint requires `Authorization: Bearer fv_sk_...`.
-
-### Authentication
-
-```
-Authorization: Bearer fv_sk_<64 hex chars>
-```
-
-### Usage Caps
-
-| Resource | Limit |
-|---|---|
-| Files | 1,000 |
-| Total storage | 1 GB |
-| Embedding chunks | 50,000 |
-| Active memories | 5,000 |
-| State checkpoints | 1,000 |
-| File size (single) | 50 MB |
-| Batch size | 10 files |
-
-All limits return `429` with a descriptive `error` field.
+Every endpoint requires `Authorization: Bearer fv_sk_<64 hex chars>`.
 
 ### Files
 
@@ -198,35 +210,16 @@ All limits return `429` with a descriptive `error` field.
 | `GET` | `/v1/files?limit=&cursor=&indexed=` | List files |
 | `POST` | `/v1/files` | Upload file (multipart) |
 | `POST` | `/v1/files/batch` | Batch upload (up to 10) |
-| `GET` | `/v1/files/:id` | Get file metadata |
+| `GET` | `/v1/files/:id` | Get file metadata + `index_status` |
 | `DELETE` | `/v1/files/:id` | Delete file + embeddings |
-| `POST` | `/v1/files/:id/index` | Index on demand |
+| `POST` | `/v1/files/:id/index` | Queue indexing on demand |
 
-**File object:**
-```json
-{
-  "file_id": "clx...",
-  "name": "report.pdf",
-  "mime_type": "application/pdf",
-  "size_bytes": 1024000,
-  "is_indexed": true,
-  "index_status": "indexed",
-  "metadata": { "project": "q3" },
-  "url": "https://...",
-  "created_at": "2026-05-05T10:00:00.000Z"
-}
-```
-
-**Async indexing.** When you upload with `index=true`, the file is accepted immediately and indexing runs in the background. Poll `GET /v1/files/:id` and watch `index_status` transition from `pending` → `indexing` → `indexed` (or `failed`).
+**`index_status` lifecycle:** `idle` → `pending` → `indexing` → `indexed` / `failed`
 
 ### Search
 
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/v1/search` | Semantic search |
-
-**Request body:**
 ```json
+POST /v1/search
 {
   "query": "quarterly revenue breakdown",
   "filter": {
@@ -244,7 +237,7 @@ All limits return `429` with a descriptive `error` field.
 
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/v1/memory` | Store memory |
+| `POST` | `/v1/memory` | Store memory `{ content, ttl? }` |
 | `GET` | `/v1/memory?limit=&cursor=` | List memories |
 | `DELETE` | `/v1/memory/:id` | Delete a memory entry |
 
@@ -252,22 +245,20 @@ All limits return `429` with a descriptive `error` field.
 
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/v1/state` | Store or update state |
+| `POST` | `/v1/state` | Store or update state (upsert by key) |
 | `GET` | `/v1/state?limit=&cursor=&key=` | List states |
-| `GET` | `/v1/state/:id` | Get single state |
+| `GET` | `/v1/state/:id` | Get single state with data |
 | `DELETE` | `/v1/state/:id` | Delete state |
-
-**State is upserted by key.** If a state with the same `key` exists, it is overwritten.
 
 ### Collections
 
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/v1/collections` | List collections |
-| `POST` | `/v1/collections` | Create collection |
+| `POST` | `/v1/collections` | Create collection `{ name }` |
 | `GET` | `/v1/collections/:id` | Get collection + files |
 | `DELETE` | `/v1/collections/:id` | Delete collection |
-| `POST` | `/v1/collections/:id/files` | Add file to collection |
+| `POST` | `/v1/collections/:id/files` | Add file `{ file_id }` |
 | `DELETE` | `/v1/collections/:id/files/:fileId` | Remove file |
 
 ### Sharing
@@ -275,40 +266,50 @@ All limits return `429` with a descriptive `error` field.
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/v1/shares` | List shares given & received |
-| `POST` | `/v1/shares` | Grant access to another agent |
+| `POST` | `/v1/shares` | Grant access `{ agent_id }` |
 | `DELETE` | `/v1/shares/:granteeId` | Revoke access |
 
-### Webhooks
+### Webhooks & Usage
 
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/v1/webhooks` | Get webhook URL |
 | `PUT` | `/v1/webhooks` | Set webhook URL |
 | `DELETE` | `/v1/webhooks` | Remove webhook |
+| `GET` | `/v1/usage` | File, embedding, memory, state counts |
 
-**Events:** `file.created`, `file.deleted`, `file.indexed`
+**Webhook events:** `file.created` · `file.deleted` · `file.indexed`
 
-### Usage
+---
 
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/v1/usage` | File, embedding, memory, and state counts |
+## Usage Caps (Free tier)
+
+| Resource | Limit |
+|---|---|
+| Files | 1,000 |
+| Total storage | 1 GB |
+| Embedding chunks | 50,000 |
+| Active memories | 5,000 |
+| State checkpoints | 1,000 |
+| Max file size | 50 MB |
+| Batch size | 10 files |
+
+All limits return `429` with a descriptive `error` field.
 
 ---
 
 ## Agent Artifacts (Human Hosting)
 
-Agents build things for humans — dashboards, reports, static sites. FileVault can host those too.
+Agents build things for humans — dashboards, reports, static sites. FileVault hosts those too.
 
-Drop a ZIP or HTML file on the homepage, get a shareable URL in seconds. This is the same storage layer; it's just exposed through a human-friendly UI.
+Drop a ZIP or HTML file on the homepage, get a shareable URL in seconds.
 
-| Feature | Anonymous | Free | Pro |
-|---|:---:|:---:|:---:|
-| Upload ZIP or HTML | ✓ | ✓ | ✓ |
-| Max upload size | 5 MB | 10 MB | 100 MB |
-| Link expiry | 24 h | 30 days | Never |
-| Custom subdomain | — | ✓ | ✓ |
-| Custom domain | — | — | ✓ |
+| Feature | Anonymous | Free |
+|---|:---:|:---:|
+| Upload ZIP or HTML | ✓ | ✓ |
+| Max upload size | 5 MB | 10 MB |
+| Link expiry | 24 h | 30 days |
+| Custom subdomain | — | ✓ |
 
 ---
 
@@ -317,15 +318,11 @@ Drop a ZIP or HTML file on the homepage, get a shareable URL in seconds. This is
 ### Prerequisites
 
 - Node.js 20+
-- PostgreSQL 15+ with [pgvector](https://github.com/pgvector/pgvector)
-
-The fastest way is Docker:
+- PostgreSQL 15+ with pgvector (fastest via Docker):
 
 ```bash
-docker compose up -d
+docker compose up -d   # spins up ankane/pgvector on localhost:5432
 ```
-
-This spins up `ankane/pgvector` on `localhost:5432`.
 
 ### 1. Clone & install
 
@@ -365,8 +362,6 @@ node node_modules/next/dist/bin/next dev
 
 > `npm run dev` and `npx next dev` fail with MODULE_NOT_FOUND on this Next.js 16 build. Use the full path above.
 
-Open [http://localhost:3000](http://localhost:3000).
-
 ### 5. Run MCP server locally
 
 ```bash
@@ -376,7 +371,8 @@ FILEVAULT_API_KEY=fv_sk_... npm run mcp
 ### 6. Run tests
 
 ```bash
-npm test
+npm test                    # unit tests (91 tests)
+npm run test:integration    # integration tests against running dev server
 ```
 
 ---
@@ -385,22 +381,18 @@ npm test
 
 ### Vercel (recommended)
 
-Production runs at **[filevault.host](https://filevault.host)** on Vercel with GitHub auto-deploy on every push to `main`.
+Production runs at **[filevault.host](https://filevault.host)** — auto-deploys on push to `main`.
 
 1. Import the GitHub repo into Vercel
-2. Set all environment variables in **Project → Settings → Environment Variables** (see `.env.example` for the full list)
-3. Set `STORAGE_DRIVER=r2` and all five R2 vars — Vercel is serverless, local disk won't work
+2. Set all env vars from `.env.example` in **Project → Settings → Environment Variables**
+3. Set `STORAGE_DRIVER=r2` (Vercel is serverless — local disk won't persist)
 4. Deploy
 
-> **Migrations:** `prisma migrate deploy` does **not** run during the Vercel build. Run new migrations manually via the Supabase SQL editor or: `DIRECT_URL=<direct_url> node node_modules/.bin/prisma migrate deploy`
+> **Migrations:** Vercel does NOT run `prisma migrate deploy` during build. Run new migrations manually via the Supabase SQL editor.
 
 ### Railway (secondary)
 
-`railway.json` and `scripts/start.sh` are still in the repo but Railway is no longer the primary target.
-
-1. Deploy from GitHub repo → Railway auto-detects `railway.json`
-2. Add all env vars (see `.env.example`)
-3. `scripts/start.sh` runs `prisma migrate deploy` then starts the server
+`railway.json` and `scripts/start.sh` remain in the repo but Railway is no longer the primary target.
 
 ---
 
@@ -423,14 +415,13 @@ Production runs at **[filevault.host](https://filevault.host)** on Vercel with G
 ## Roadmap
 
 ### v1.1
-
-- [ ] Streaming search
+- [ ] Streaming search results
 - [ ] Re-ranking with cross-encoder
 - [x] pgvector migration
-- [ ] Billing for agent API
+- [x] `DELETE /v1/memory/:id`
+- [ ] Billing for agent API (Pro tier)
 
 ### v1.2
-
 - [ ] Knowledge graph API (nodes + edges)
 - [ ] Multi-modal embeddings (images)
 - [ ] Agent CLI (`npx filevault`)
@@ -450,10 +441,11 @@ Production runs at **[filevault.host](https://filevault.host)** on Vercel with G
 
 ## License
 
-MIT — see [LICENSE](LICENSE) for details.
+MIT — see [LICENSE](LICENSE).
 
 ---
 
-<p align="center">
+<div align="center">
+  <img src="./public/logo.png" width="48" alt="FileVault" /><br/>
   Built with <a href="https://nextjs.org">Next.js</a> · <a href="https://prisma.io">Prisma</a> · <a href="https://www.cloudflare.com/developer-platform/r2/">Cloudflare R2</a> · <a href="https://openrouter.ai">OpenRouter</a>
-</p>
+</div>
