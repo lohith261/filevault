@@ -5,8 +5,8 @@ import { motion } from 'framer-motion'
 const TESTIMONIALS = [
   {
     quote: 'We replaced S3 + Pinecone + a custom auth layer with FileVault in a single afternoon. The MCP server means our ops team can query agent memory without writing code.',
-    author: 'Engineering Lead',
-    org: 'AI Infrastructure, Series B Startup',
+    author: 'Hemanth A',
+    org: 'AI Engineer, Cognizant',
   },
 ]
 
