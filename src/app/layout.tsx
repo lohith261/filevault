@@ -22,10 +22,16 @@ export const metadata: Metadata = {
   title: 'FileVault — The Storage Layer AI Agents Actually Need',
   description:
     'Files, memory, semantic search, and agent-to-agent sharing — one API. Built for AI agents. Useful for humans too.',
+  icons: {
+    icon: '/icon.png',
+    shortcut: '/icon.png',
+    apple: '/icon.png',
+  },
   openGraph: {
     title: 'FileVault — The Storage Layer AI Agents Actually Need',
     description: 'Files, memory, semantic search, and agent-to-agent sharing — one API.',
     type: 'website',
+    images: [{ url: '/logo.png', width: 480, height: 480, alt: 'FileVault' }],
   },
 }
 
