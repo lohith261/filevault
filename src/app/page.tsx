@@ -5,19 +5,19 @@ import { HowItWorksSection } from '@/components/landing/HowItWorksSection'
 import { TestimonialsSection } from '@/components/landing/TestimonialsSection'
 import { SocialProofSection } from '@/components/landing/SocialProofSection'
 
-// Skeleton shown while SocialProofSection makes its DB queries.
-// Prevents DB latency from blocking the initial page render.
-function SocialProofSkeleton() {
-  return <div className="h-40 w-full" aria-hidden />
+// Shown while HeroSection awaits the cached DB count.
+// Cache TTL is 5 min so this skeleton only flashes on cold cache misses.
+function HeroSkeleton() {
+  return <div className="min-h-[90vh]" aria-hidden />
 }
 
 export default function Home() {
   return (
     <>
-      <HeroSection />
-      <Suspense fallback={<SocialProofSkeleton />}>
-        <SocialProofSection />
+      <Suspense fallback={<HeroSkeleton />}>
+        <HeroSection />
       </Suspense>
+      <SocialProofSection />
       <FeaturesSection />
       <HowItWorksSection />
       <TestimonialsSection />

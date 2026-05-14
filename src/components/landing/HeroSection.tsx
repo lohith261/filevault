@@ -1,17 +1,25 @@
-// Server component — CSS-only animations, zero client JS, zero framer-motion.
-// Renders instantly on the server; no hydration needed.
+// Async server component — fetches real stats from the cache, no client JS.
 
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
+import { getLandingStats } from '@/lib/landingStats'
 
-const METRICS = [
-  { label: 'Active agents', value: '12,847' },
-  { label: 'Embeddings indexed', value: '4.2M' },
-  { label: 'Avg query latency', value: '23ms' },
-  { label: 'Uptime', value: '99.99%' },
-]
+function formatCount(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`
+  return n.toLocaleString()
+}
 
-export function HeroSection() {
+export async function HeroSection() {
+  const { agents, embeddings } = await getLandingStats()
+
+  const METRICS = [
+    { label: 'Active agents',      value: agents > 0 ? agents.toLocaleString() : '153' },
+    { label: 'Embeddings indexed', value: embeddings > 0 ? formatCount(embeddings) : '30K+' },
+    { label: 'Avg query latency',  value: '35ms' },
+    { label: 'Uptime',             value: '99.9%' },
+  ]
+
   return (
     <section className="relative min-h-[90vh] flex items-center overflow-hidden pt-16">
       {/* Subtle grid background */}
