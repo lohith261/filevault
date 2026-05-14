@@ -1,7 +1,7 @@
-'use client'
+// Server component — CSS-only animations, zero client JS, zero framer-motion.
+// Renders instantly on the server; no hydration needed.
 
 import Link from 'next/link'
-import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
 
 const METRICS = [
@@ -22,12 +22,7 @@ export function HeroSection() {
       <div className="relative z-10 mx-auto max-w-7xl px-6 py-20 lg:py-28 w-full">
         <div className="grid lg:grid-cols-5 gap-16 lg:gap-12 items-start">
           {/* Left: Copy (3 cols) */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: 'easeOut' }}
-            className="lg:col-span-3"
-          >
+          <div className="lg:col-span-3 animate-fade-in-up">
             <p className="text-[11px] font-mono uppercase tracking-[0.15em] text-[var(--muted-foreground)] mb-6">
               Infrastructure for autonomous systems
             </p>
@@ -62,15 +57,10 @@ export function HeroSection() {
               <span className="text-[var(--border)]">|</span>
               <span>MCP Compatible</span>
             </div>
-          </motion.div>
+          </div>
 
           {/* Right: System metrics panel (2 cols) */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.15, ease: 'easeOut' }}
-            className="lg:col-span-2"
-          >
+          <div className="lg:col-span-2 animate-fade-in-up animation-delay-150">
             <div className="panel rounded-md">
               <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between">
                 <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--muted-foreground)]">
@@ -122,7 +112,7 @@ export function HeroSection() {
                 ))}
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>

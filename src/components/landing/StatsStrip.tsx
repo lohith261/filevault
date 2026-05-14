@@ -1,6 +1,4 @@
-'use client'
-
-import { motion } from 'framer-motion'
+// Server component — no framer-motion, no client JS.
 
 interface StatsStripProps {
   agents: number
@@ -9,24 +7,21 @@ interface StatsStripProps {
 
 export function StatsStrip({ agents, files }: StatsStripProps) {
   const stats = [
-    { label: 'Active agents', value: agents.toLocaleString() },
-    { label: 'Files stored', value: files.toLocaleString() },
-    { label: 'Index latency', value: '< 3s' },
-    { label: 'Query latency', value: '< 50ms' },
+    { label: 'Active agents', value: agents.toLocaleString(), delay: '0ms' },
+    { label: 'Files stored', value: files.toLocaleString(), delay: '80ms' },
+    { label: 'Index latency', value: '< 3s', delay: '160ms' },
+    { label: 'Query latency', value: '< 50ms', delay: '240ms' },
   ]
 
   return (
     <section className="border-b border-[var(--border)]">
       <div className="mx-auto max-w-7xl px-6">
         <div className="flex flex-wrap items-center divide-x divide-[var(--border)]">
-          {stats.map((stat, i) => (
-            <motion.div
+          {stats.map((stat) => (
+            <div
               key={stat.label}
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.3, delay: i * 0.05 }}
-              className="flex-1 min-w-[140px] px-5 py-4 first:pl-0"
+              className="flex-1 min-w-[140px] px-5 py-4 first:pl-0 animate-fade-in-up"
+              style={{ animationDelay: stat.delay }}
             >
               <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--muted-foreground)] mb-1">
                 {stat.label}
@@ -34,7 +29,7 @@ export function StatsStrip({ agents, files }: StatsStripProps) {
               <p className="text-lg font-mono text-[var(--foreground)] tabular-nums tracking-tight">
                 {stat.value}
               </p>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>

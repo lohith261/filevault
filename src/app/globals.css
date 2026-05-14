@@ -94,8 +94,15 @@ html {
 }
 
 .animate-fade-in-up {
+  opacity: 0;
   animation: fade-in-up 0.4s ease-out forwards;
 }
+
+/* Staggered delay helpers — use alongside animate-fade-in-up */
+.animation-delay-100 { animation-delay: 100ms; }
+.animation-delay-150 { animation-delay: 150ms; }
+.animation-delay-200 { animation-delay: 200ms; }
+.animation-delay-300 { animation-delay: 300ms; }
 
 /* ── Grid pattern (subdued) ──────────────────────────────────────────────── */
 .bg-grid {

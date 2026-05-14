@@ -1,6 +1,4 @@
-'use client'
-
-import { motion } from 'framer-motion'
+// Server component — no framer-motion, no client JS needed.
 
 const SHOWCASES = [
   {
@@ -24,30 +22,21 @@ export function ShowcaseCards() {
   return (
     <section className="py-20 px-6 border-t border-[var(--border)]">
       <div className="mx-auto max-w-6xl">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.4 }}
-          className="mb-10"
-        >
+        <div className="mb-10 animate-fade-in-up">
           <p className="text-[11px] font-mono uppercase tracking-[0.15em] text-[var(--muted-foreground)] mb-3">
             Use cases
           </p>
           <h2 className="text-3xl sm:text-4xl font-bold text-[var(--foreground)] tracking-tight">
             Built for real agents.
           </h2>
-        </motion.div>
+        </div>
 
         <div className="divide-y divide-[var(--border)] border-t border-[var(--border)]">
           {SHOWCASES.map((item, i) => (
-            <motion.div
+            <div
               key={item.title}
-              initial={{ opacity: 0, y: 8 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.3, delay: i * 0.05 }}
-              className="py-5 grid grid-cols-12 gap-4 items-center"
+              className="py-5 grid grid-cols-12 gap-4 items-center animate-fade-in-up"
+              style={{ animationDelay: `${i * 60}ms` }}
             >
               <div className="col-span-12 sm:col-span-3">
                 <h3 className="text-sm font-semibold text-[var(--foreground)]">
@@ -64,7 +53,7 @@ export function ShowcaseCards() {
                   {item.description}
                 </p>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>
