@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 
 export function Footer() {
   return (
@@ -8,12 +9,8 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-6 py-12">
         <div className="flex flex-col lg:flex-row items-start justify-between gap-10">
           <div className="max-w-sm">
-            <div className="flex items-center gap-2.5 mb-4">
-              <div className="flex h-7 w-7 items-center justify-center rounded-sm bg-[var(--brand)]">
-                <svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-              </div>
+            <div className="flex items-center gap-2 mb-4">
+              <Image src="/icon.png" alt="FileVault" width={28} height={28} className="rounded-sm" />
               <span className="font-bold text-[var(--foreground)] tracking-tight">FileVault</span>
             </div>
             <p className="text-sm text-[var(--muted-foreground)] leading-relaxed">
