@@ -33,3 +33,80 @@ jobs:
 
       - name: Test
         run: npm test
+
+  integration:
+    name: Integration test (real Postgres + real API, no mocks)
+    runs-on: ubuntu-latest
+    # This job exists because the unit tests above mock Prisma entirely, so
+    # raw SQL (indexing.ts, /v1/search, /v1/memory) never actually runs
+    # against a real schema in CI. That gap is exactly what let indexing,
+    # search, and memory storage ship broken and stay broken in production
+    # for months, undetected -- see the commit fixing the column-name
+    # mismatch. This job runs the real HTTP integration suite
+    # (scripts/test-agent.ts) against a real migrated Postgres+pgvector
+    # instance, so a recurrence of that bug class fails the build instead
+    # of shipping silently.
+    services:
+      postgres:
+        image: ankane/pgvector:latest
+        env:
+          POSTGRES_USER: filevault
+          POSTGRES_PASSWORD: filevault
+          POSTGRES_DB: filevault
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U filevault -d filevault"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://filevault:filevault@localhost:5432/filevault
+      DIRECT_URL: postgresql://filevault:filevault@localhost:5432/filevault
+      STORAGE_DRIVER: local
+      UPLOADS_PATH: ./uploads
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      NEXT_PUBLIC_BASE_URL: http://localhost:3001
+      NEXT_PUBLIC_BASE_DOMAIN: filevault.host
+      CRON_SECRET: ci-integration-test-secret
+      TEST_BASE_URL: http://localhost:3001
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Schema-drift guard
+        run: npx tsx scripts/check-schema.ts
+
+      - name: Build
+        run: node node_modules/next/dist/bin/next build
+
+      - name: Start server
+        run: |
+          node node_modules/next/dist/bin/next start -p 3001 &
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3001/ > /dev/null; then
+              echo "server is up"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "server did not become ready in time" >&2
+          exit 1
+
+      - name: Run integration test suite
+        run: npx tsx scripts/test-agent.ts

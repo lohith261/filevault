@@ -4,6 +4,7 @@ import { generateEmbedding } from '@/lib/embeddings'
 import { chunkText } from '@/lib/chunking'
 import { extractText } from '@/lib/extractors'
 import { logger } from '@/lib/logger'
+import { alert } from '@/lib/alert'
 import { checkEmbeddingCapacity } from '@/lib/agentLimits'
 import { fireWebhook } from '@/lib/webhook'
 
@@ -102,7 +103,7 @@ export async function runIndexingJob(
       where: { id: fileId },
       data: { indexStatus: 'failed' },
     })
-    logger.error('indexing job failed', { agentId, fileId, error: message })
+    await alert('indexing job failed', { agentId, fileId, error: message })
   }
 }
 

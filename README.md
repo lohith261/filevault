@@ -371,9 +371,22 @@ FILEVAULT_API_KEY=fv_sk_... npm run mcp
 ### 6. Run tests
 
 ```bash
-npm test                    # unit tests (91 tests)
-npm run test:integration    # integration tests against running dev server
+npm test                    # unit tests (91 tests) -- these mock Prisma entirely
+npm run check:schema        # asserts the DB actually has the columns raw SQL expects
+npm run test:integration    # real HTTP integration tests against a running dev server + real DB
+npm run smoke-test          # narrower version of the above, meant to run against production
 ```
+
+`npm test` mocks the database, so it never exercises the raw SQL that
+`indexing.ts`, `/v1/search`, and `/v1/memory` use for the `vector` columns
+(Prisma's typed API can't touch those). That gap is why a column-naming
+mismatch shipped and broke indexing/search/memory silently in production for
+months before anyone noticed. `check:schema` and `test:integration` close
+that gap locally; CI runs both against a real Postgres+pgvector service
+container on every push (see `.github/workflows/ci.yml`), and
+`.github/workflows/smoke-test.yml` runs `smoke-test` against the live site
+every 6 hours so a regression here fails a workflow within hours instead of
+going unnoticed.
 
 ---
 

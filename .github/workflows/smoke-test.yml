@@ -1,0 +1,36 @@
+name: Production smoke test
+
+# Runs scripts/smoke-test.ts against the live site on a schedule, so a
+# regression in indexing/search/memory (the exact bug class that broke
+# silently in production for months -- see the column-name-mismatch fix)
+# fails a workflow and notifies within hours instead of going unnoticed.
+#
+# GitHub sends a workflow-failure email to the repo owner/watchers by
+# default -- no extra webhook/secret needed for basic alerting. Swap in a
+# Slack/Discord/PagerDuty webhook step here later if you want richer alerts.
+
+on:
+  schedule:
+    - cron: '0 */6 * * *' # every 6 hours
+  workflow_dispatch: {} # allow manual "Run workflow" from the Actions tab
+
+jobs:
+  smoke-test:
+    name: Smoke test production
+    runs-on: ubuntu-latest
+    env:
+      TEST_BASE_URL: https://filevault.host
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run smoke test
+        run: npx tsx scripts/smoke-test.ts
