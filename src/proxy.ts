@@ -63,8 +63,26 @@ export default async function handler(req: NextRequest) {
     }
   }
 
-  // Custom domain lookup — if the host is not the base domain or a subdomain of it
-  if (host !== BASE_DOMAIN && host !== `www.${BASE_DOMAIN}` && !host.endsWith(`.${BASE_DOMAIN}`)) {
+  // Custom domain lookup — if the host is not the base domain or a subdomain of it.
+  // Skipped for /api/* entirely: custom domains only ever serve /s/[slug] page
+  // content, never API responses, and this specifically prevents the fetch()
+  // below (to /api/domain, itself an /api/* path) from re-entering this same
+  // middleware and re-triggering itself -- an unbounded recursive request
+  // storm that was flooding the DB connection pool with failing lookups on
+  // every single request through any non-canonical host (localhost in local
+  // dev/CI, any *.vercel.app preview URL in production), confirmed by the
+  // repeated "Can't reach database server" prisma.site.findFirst() errors
+  // this produced. Not merely wasteful: it was consuming enough of the
+  // request budget that a real caller (e.g. a second immediate index
+  // request) could arrive after the delayed response instead of during the
+  // window it was supposed to observe -- which is what surfaced this as a
+  // seemingly-flaky pending/429 status-code test elsewhere.
+  if (
+    !req.nextUrl.pathname.startsWith('/api/') &&
+    host !== BASE_DOMAIN &&
+    host !== `www.${BASE_DOMAIN}` &&
+    !host.endsWith(`.${BASE_DOMAIN}`)
+  ) {
     try {
       const lookupUrl = new URL('/api/domain', req.nextUrl.origin)
       lookupUrl.searchParams.set('host', host)
