@@ -73,9 +73,9 @@ export async function POST(req: NextRequest) {
       const fileIdFilter = filter?.file_id
       const agentIdList = Prisma.join(agentIds)
       const fileWhere = fileIdFilter
-        ? Prisma.sql`AND e.file_id = ${fileIdFilter}`
+        ? Prisma.sql`AND e."fileId" = ${fileIdFilter}`
         : collectionFileIds
-          ? Prisma.sql`AND e.file_id IN (${Prisma.join(collectionFileIds)})`
+          ? Prisma.sql`AND e."fileId" IN (${Prisma.join(collectionFileIds)})`
           : Prisma.empty
 
       const rows = await prisma.$queryRaw(
@@ -84,14 +84,14 @@ export async function POST(req: NextRequest) {
             e.id,
             e.content,
             1 - (e.vector <=> ${vectorLiteral}::vector) AS score,
-            e.file_id,
+            e."fileId" AS file_id,
             f.name,
-            f.storage_key,
+            f."storageKey" AS storage_key,
             f.metadata
           FROM embeddings e
-          JOIN agent_files f ON f.id = e.file_id
-          WHERE e.agent_id IN (${agentIdList})
-            AND f.index_status = 'indexed'
+          JOIN agent_files f ON f.id = e."fileId"
+          WHERE e."agentId" IN (${agentIdList})
+            AND f."indexStatus" = 'indexed'
             ${fileWhere}
           ORDER BY e.vector <=> ${vectorLiteral}::vector
           LIMIT ${limit * 4}
@@ -149,8 +149,8 @@ export async function POST(req: NextRequest) {
           content,
           1 - (vector <=> ${vectorLiteral}::vector) AS score
         FROM memories
-        WHERE agent_id = ${agentId}
-          AND (expires_at IS NULL OR expires_at > NOW())
+        WHERE "agentId" = ${agentId}
+          AND ("expiresAt" IS NULL OR "expiresAt" > NOW())
         ORDER BY vector <=> ${vectorLiteral}::vector
         LIMIT ${limit * 2}
       `

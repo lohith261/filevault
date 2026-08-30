@@ -39,9 +39,9 @@ export async function POST(req: NextRequest) {
     const vectorLiteral = `[${vector.join(',')}]`
 
     const result = await prisma.$queryRaw<[{ id: string; createdAt: Date }]>`
-      INSERT INTO memories (id, agent_id, content, vector, expires_at, created_at)
+      INSERT INTO memories (id, "agentId", content, vector, "expiresAt", "createdAt")
       VALUES (gen_random_uuid(), ${agentId}, ${content}, ${vectorLiteral}::vector, ${expiresAt}, NOW())
-      RETURNING id, created_at
+      RETURNING id, "createdAt"
     `
 
     const memory = result[0]
