@@ -36,6 +36,12 @@ const isPublicRoute = createRouteMatcher([
   '/api/upload',
   '/api/cron/(.*)',
   '/api/domain',
+  // The agent API authenticates its own callers via fv_sk_... Bearer tokens
+  // (resolveAgent() in every /v1 route handler), not Clerk sessions. Without
+  // this, Clerk's auth.protect() blocks every agent API call before it
+  // reaches the handler -- see the commit that added this line for the
+  // full story.
+  '/api/v1(.*)',
 ])
 
 const clerkHandler = clerkMiddleware(async (auth, req) => {
