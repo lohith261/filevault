@@ -8,24 +8,34 @@ import {
 import { Readable } from 'stream'
 import type { FileEntry, StorageDriver } from './types'
 
+// .trim() guards against trailing whitespace/newlines in stored env var
+// values (e.g. pasted via a dashboard). Confirmed live in production: all
+// five R2_* vars were stored with a trailing "\n" -- AWS SigV4 signing then
+// embeds that raw newline into the request's Authorization header, which
+// Node's HTTP client correctly rejects ("Invalid character in header
+// content [\"authorization\"]"), so every R2 call failed outright.
+function env(name: string): string {
+  return (process.env[name] ?? '').trim()
+}
+
 function client(): S3Client {
   return new S3Client({
     region: 'auto',
-    endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+    endpoint: `https://${env('R2_ACCOUNT_ID')}.r2.cloudflarestorage.com`,
     credentials: {
-      accessKeyId: process.env.R2_ACCESS_KEY_ID!,
-      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+      accessKeyId: env('R2_ACCESS_KEY_ID'),
+      secretAccessKey: env('R2_SECRET_ACCESS_KEY'),
     },
   })
 }
 
 function bucket(): string {
-  return process.env.R2_BUCKET_NAME!
+  return env('R2_BUCKET_NAME')
 }
 
 // Public CDN base URL, e.g. https://pub-xxx.r2.dev or https://cdn.filevault.host
 function publicBase(): string {
-  const u = process.env.R2_PUBLIC_URL ?? ''
+  const u = env('R2_PUBLIC_URL')
   return u.endsWith('/') ? u.slice(0, -1) : u
 }
 
