@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { UserButton, SignInButton } from '@clerk/nextjs'
@@ -9,17 +8,27 @@ import { Button } from '@/components/ui/Button'
 import { useSafeAuth } from '@/hooks/useSafeAuth'
 
 const CLERK_CONFIGURED = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-
-const NAV_LINKS = [
-  { href: '/agents', label: 'Agents' },
-  { href: '/pricing', label: 'Pricing' },
-  { href: '/help', label: 'Docs' },
-]
+const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? 'filevault.host'
+const MAIN_ORIGIN = `https://${BASE_DOMAIN}`
 
 export function Navbar() {
   const { isSignedIn } = useSafeAuth()
   const [menuOpen, setMenuOpen] = useState(false)
   const pathname = usePathname()
+
+  // When served from dashboard.filevault.host, links must be absolute to filevault.host
+  const onDashboardSubdomain =
+    typeof window !== 'undefined' &&
+    window.location.hostname === `dashboard.${BASE_DOMAIN}`
+
+  const href = (path: string) => onDashboardSubdomain ? `${MAIN_ORIGIN}${path}` : path
+
+  const NAV_LINKS = [
+    { href: href('/agents'), label: 'Agents' },
+    { href: href('/pricing'), label: 'Pricing' },
+    { href: href('/help'), label: 'Docs' },
+  ]
+
   const onAgentsDashboard = pathname === '/agents'
 
   return (
@@ -27,22 +36,22 @@ export function Navbar() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         {/* Logo */}
         <div className="flex items-center gap-6">
-          <Link
-            href="/"
+          <a
+            href={href('/')}
             className="flex items-center gap-2 text-sm font-bold text-[var(--foreground)] tracking-tight"
           >
             <Image src="/icon.png" alt="FileVault" width={28} height={28} className="rounded-sm" priority />
             <span className="hidden sm:inline">FileVault</span>
-          </Link>
+          </a>
 
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-1">
-            {NAV_LINKS.map(({ href, label }) => (
-              <Link key={href} href={href}>
+            {NAV_LINKS.map(({ href: navHref, label }) => (
+              <a key={label} href={navHref}>
                 <Button variant="ghost" size="sm" className="text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
                   {label}
                 </Button>
-              </Link>
+              </a>
             ))}
           </nav>
         </div>
@@ -50,20 +59,20 @@ export function Navbar() {
         {/* Right: auth + CTA + hamburger */}
         <div className="flex items-center gap-2 sm:gap-3">
           {!onAgentsDashboard && !isSignedIn && (
-            <Link href="/agents">
+            <a href={href('/agents')}>
               <Button size="sm" className="bg-[var(--brand)] text-[var(--brand-foreground)] hover:bg-[var(--brand-hover)] text-xs">
                 Get API Key
               </Button>
-            </Link>
+            </a>
           )}
 
           {isSignedIn ? (
             <>
-              <Link href="/dashboard" className="hidden sm:block">
+              <a href={`https://dashboard.${BASE_DOMAIN}`} className="hidden sm:block">
                 <Button variant="ghost" size="sm" className="text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
                   Dashboard
                 </Button>
-              </Link>
+              </a>
               <UserButton />
             </>
           ) : CLERK_CONFIGURED ? (
@@ -88,24 +97,24 @@ export function Navbar() {
       {/* Mobile drawer */}
       {menuOpen && (
         <div className="md:hidden border-t border-[var(--border)] bg-[var(--background)] px-4 py-4 flex flex-col gap-1">
-          {NAV_LINKS.map(({ href, label }) => (
-            <Link
-              key={href}
-              href={href}
+          {NAV_LINKS.map(({ href: navHref, label }) => (
+            <a
+              key={label}
+              href={navHref}
               onClick={() => setMenuOpen(false)}
               className="block px-3 py-2.5 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] rounded-md transition-colors"
             >
               {label}
-            </Link>
+            </a>
           ))}
           {isSignedIn && (
-            <Link
-              href="/dashboard"
+            <a
+              href={`https://dashboard.${BASE_DOMAIN}`}
               onClick={() => setMenuOpen(false)}
               className="block px-3 py-2.5 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] rounded-md transition-colors"
             >
               Dashboard
-            </Link>
+            </a>
           )}
           {!isSignedIn && CLERK_CONFIGURED && (
             <SignInButton mode="modal">

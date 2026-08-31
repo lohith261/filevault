@@ -78,15 +78,61 @@ curl -X POST https://filevault.host/api/v1/search \\
   -H "Content-Type: application/json" \\
   -d '{"query": "What was the Q3 revenue?"}'`
 
+const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? 'filevault.host'
+const DASHBOARD_ORIGIN = `https://dashboard.${BASE_DOMAIN}`
+
 export default function AgentsPage() {
   const { isSignedIn, userId } = useAuth()
 
-  // Signed-in users go straight to the dashboard
-  if (isSignedIn && userId) {
-    return <AgentDashboard userId={userId} />
+  // Dashboard only renders when accessed via dashboard.filevault.host
+  const onDashboardSubdomain =
+    typeof window !== 'undefined' &&
+    window.location.hostname === `dashboard.${BASE_DOMAIN}`
+
+  if (onDashboardSubdomain) {
+    if (isSignedIn && userId) return <AgentDashboard userId={userId} />
+    // Signed-out on dashboard subdomain — prompt sign-in
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center">
+        <h1 className="text-2xl font-bold text-[var(--foreground)] mb-2">Sign in to access your dashboard</h1>
+        <p className="text-sm text-[var(--muted-foreground)] mb-6 max-w-sm">
+          Your agents, files, and memories are waiting. Sign in to continue.
+        </p>
+        <SignInButton mode="modal">
+          <Button className="px-6 py-2.5">Sign in →</Button>
+        </SignInButton>
+      </div>
+    )
   }
 
-  // Marketing landing for unauthenticated visitors
+  // filevault.host/agents — always shows the marketing landing.
+  // Signed-in users see "Open dashboard →" instead of "Get started".
+  const heroCTA = isSignedIn ? (
+    <a
+      href={DASHBOARD_ORIGIN}
+      className="inline-flex items-center rounded-lg bg-[var(--brand)] px-6 py-2.5 text-sm font-semibold text-[var(--brand-foreground)] hover:bg-[var(--brand-hover)] transition-colors"
+    >
+      Open dashboard →
+    </a>
+  ) : (
+    <SignInButton mode="modal">
+      <Button className="px-6 py-2.5 text-sm">Get started →</Button>
+    </SignInButton>
+  )
+
+  const bottomCTA = isSignedIn ? (
+    <a
+      href={DASHBOARD_ORIGIN}
+      className="inline-flex items-center rounded-lg bg-[var(--brand)] px-8 py-2.5 text-sm font-semibold text-[var(--brand-foreground)] hover:bg-[var(--brand-hover)] transition-colors"
+    >
+      Open dashboard →
+    </a>
+  ) : (
+    <SignInButton mode="modal">
+      <Button className="px-8 py-2.5">Sign in to get started →</Button>
+    </SignInButton>
+  )
+
   return (
     <div className="mx-auto max-w-5xl px-6 pt-28 pb-24">
       {/* Hero */}
@@ -99,11 +145,7 @@ export default function AgentsPage() {
           One API key. Files, semantic search, persistent memory, and cross-agent sharing — no stitching required.
         </p>
         <div className="mt-8 flex items-center justify-center gap-3 flex-wrap">
-          <SignInButton mode="modal">
-            <Button className="px-6 py-2.5 text-sm">
-              Get started →
-            </Button>
-          </SignInButton>
+          {heroCTA}
           <a
             href="/help"
             className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-5 py-2.5 text-sm font-medium text-[var(--muted-foreground)] transition-colors hover:border-[var(--brand)] hover:text-[var(--foreground)]"
@@ -111,9 +153,11 @@ export default function AgentsPage() {
             Read the docs
           </a>
         </div>
-        <p className="mt-4 text-xs text-[var(--muted-foreground)]">
-          Free to start · No credit card required
-        </p>
+        {!isSignedIn && (
+          <p className="mt-4 text-xs text-[var(--muted-foreground)]">
+            Free to start · No credit card required
+          </p>
+        )}
       </div>
 
       {/* Code snippet */}
@@ -148,13 +192,11 @@ export default function AgentsPage() {
       <div className="rounded-2xl border border-[var(--brand)]/20 bg-[var(--brand)]/5 p-10 text-center">
         <h2 className="text-2xl font-bold text-[var(--foreground)] mb-2">Ready to build?</h2>
         <p className="text-sm text-[var(--muted-foreground)] mb-6 max-w-md mx-auto">
-          Sign in to create an agent, upload files, and start searching in under 2 minutes.
+          {isSignedIn
+            ? 'Your dashboard is ready. Manage agents, upload files, and search in natural language.'
+            : 'Sign in to create an agent, upload files, and start searching in under 2 minutes.'}
         </p>
-        <SignInButton mode="modal">
-          <Button className="px-8 py-2.5">
-            Sign in to get started →
-          </Button>
-        </SignInButton>
+        {bottomCTA}
       </div>
     </div>
   )
