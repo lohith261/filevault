@@ -113,8 +113,7 @@ export default function AgentsPage() {
 
   function handleKeyReady(key: string) {
     writeKey(key)
-    setApiKey(key)
-    setShowSetup(false)
+    window.location.href = 'https://dashboard.filevault.host'
   }
 
   function handleForget() {

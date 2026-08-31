@@ -46,7 +46,6 @@ export function AgentSetup({ onKeyReady }: AgentSetupProps) {
   }
 
   function confirmKey() {
-    localStorage.setItem('fv_agent_key', newKey)
     onKeyReady(newKey)
   }
 
@@ -56,7 +55,6 @@ export function AgentSetup({ onKeyReady }: AgentSetupProps) {
       setError('Key must start with fv_sk_')
       return
     }
-    localStorage.setItem('fv_agent_key', k)
     onKeyReady(k)
   }
 
