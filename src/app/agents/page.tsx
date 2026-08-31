@@ -1,7 +1,6 @@
 'use client'
 
 import { useAuth, SignInButton } from '@clerk/nextjs'
-import { AgentDashboard } from '@/components/agents/AgentDashboard'
 import { Button } from '@/components/ui/Button'
 
 const FEATURES = [
@@ -81,31 +80,11 @@ curl -X POST https://filevault.host/api/v1/search \\
 const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN ?? 'filevault.host'
 const DASHBOARD_ORIGIN = `https://dashboard.${BASE_DOMAIN}`
 
+// filevault.host/agents — always the marketing landing.
+// dashboard.filevault.host is served by /dashboard-app/page.tsx via middleware.
 export default function AgentsPage() {
-  const { isSignedIn, userId } = useAuth()
+  const { isSignedIn } = useAuth()
 
-  // Dashboard only renders when accessed via dashboard.filevault.host
-  const onDashboardSubdomain =
-    typeof window !== 'undefined' &&
-    window.location.hostname === `dashboard.${BASE_DOMAIN}`
-
-  if (onDashboardSubdomain) {
-    if (isSignedIn && userId) return <AgentDashboard userId={userId} />
-    // Signed-out on dashboard subdomain — prompt sign-in
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center">
-        <h1 className="text-2xl font-bold text-[var(--foreground)] mb-2">Sign in to access your dashboard</h1>
-        <p className="text-sm text-[var(--muted-foreground)] mb-6 max-w-sm">
-          Your agents, files, and memories are waiting. Sign in to continue.
-        </p>
-        <SignInButton mode="modal">
-          <Button className="px-6 py-2.5">Sign in →</Button>
-        </SignInButton>
-      </div>
-    )
-  }
-
-  // filevault.host/agents — always shows the marketing landing.
   // Signed-in users see "Open dashboard →" instead of "Get started".
   const heroCTA = isSignedIn ? (
     <a

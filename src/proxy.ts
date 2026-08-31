@@ -27,6 +27,7 @@ const isPublicRoute = createRouteMatcher([
   '/pricing',
   '/help',
   '/agents',
+  '/dashboard-app',
   '/tos',
   '/privacy',
   '/not-found',
@@ -60,7 +61,7 @@ export default async function handler(req: NextRequest) {
     // Special subdomains — rewrite to their canonical app path
     if (subdomain === 'dashboard') {
       const url = req.nextUrl.clone()
-      url.pathname = req.nextUrl.pathname === '/' ? '/agents' : req.nextUrl.pathname
+      url.pathname = '/dashboard-app'
       return NextResponse.rewrite(url)
     }
     if (subdomain && !RESERVED_SUBDOMAINS.has(subdomain)) {
