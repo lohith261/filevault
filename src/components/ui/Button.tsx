@@ -15,11 +15,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       'inline-flex items-center justify-center gap-2 rounded-[var(--radius)] font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 select-none'
 
     const variants = {
-      primary: 'bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/85',
-      secondary: 'bg-[var(--secondary)] text-[var(--secondary-foreground)] hover:bg-[var(--muted)]',
-      ghost: 'text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)]',
-      destructive: 'bg-[var(--destructive)] text-white hover:bg-red-700',
-      outline: 'border border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--secondary)]',
+      primary: 'bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-white/90 active:scale-[0.98]',
+      secondary: 'bg-[var(--secondary)] text-[var(--secondary-foreground)] hover:bg-white/[0.08] active:scale-[0.98]',
+      ghost: 'text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-white/[0.05]',
+      destructive: 'bg-[var(--destructive)] text-white hover:bg-red-600 active:scale-[0.98]',
+      outline: 'border border-[var(--border)] text-[var(--foreground)] hover:border-white/20 hover:bg-white/[0.04]',
     }
 
     const sizes = {

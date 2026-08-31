@@ -1,10 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  /* Brand — single desaturated blue, no gradients */
-  --brand: #3b82f6;
+  /* Brand — indigo-violet, distinctly not a Tailwind default */
+  --brand: #5865f2;
   --brand-foreground: #ffffff;
-  --brand-muted: rgba(59, 130, 246, 0.12);
+  --brand-muted: rgba(88, 101, 242, 0.12);
+  --brand-hover: #4757e0;
 
   /* Base — dark editorial */
   --background: #0a0a0f;
@@ -173,11 +174,14 @@ html {
   overflow-x: auto;
 }
 
-.code-keyword { color: #60a5fa; }
+.code-keyword  { color: #818cf8; }
 .code-string   { color: #4ade80; }
 .code-function { color: #93c5fd; }
-.code-comment  { color: #52525b; }
+.code-comment  { color: #4b5563; }
 .code-number   { color: #fbbf24; }
+.code-key      { color: #94a3b8; }
+.code-value    { color: #4ade80; }
+.code-punct    { color: #6b7280; }
 
 /* ── Card hover (restrained) ─────────────────────────────────────────────── */
 .card-hover {

@@ -48,7 +48,7 @@ function Code({ children }: { children: string }) {
     setTimeout(() => setCopied(false), 1800)
   }
   return (
-    <div className="relative group rounded-xl border border-[var(--border)] bg-[var(--foreground)] overflow-hidden mb-5">
+    <div className="relative group rounded-xl border border-[var(--border)] bg-[#0d0d12] overflow-hidden mb-5">
       <button
         onClick={copy}
         className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity rounded-md bg-white/10 px-2 py-1 text-[10px] font-mono text-white/60 hover:text-white hover:bg-white/20"

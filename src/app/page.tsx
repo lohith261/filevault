@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { HeroSection } from '@/components/landing/HeroSection'
 import { FeaturesSection } from '@/components/landing/FeaturesSection'
 import { HowItWorksSection } from '@/components/landing/HowItWorksSection'
+import { ComparisonSection } from '@/components/landing/ComparisonSection'
 import { TestimonialsSection } from '@/components/landing/TestimonialsSection'
 import { SocialProofSection } from '@/components/landing/SocialProofSection'
 
@@ -19,6 +20,7 @@ export default function Home() {
       </Suspense>
       <SocialProofSection />
       <FeaturesSection />
+      <ComparisonSection />
       <HowItWorksSection />
       <TestimonialsSection />
     </>
