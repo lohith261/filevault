@@ -12,7 +12,6 @@ const ABUSE_EMAIL = 'abuse@filevault.host'
 export default function TermsPage() {
   return (
     <main className="mx-auto max-w-3xl px-6 py-24">
-      <p className="text-xs font-semibold uppercase tracking-widest text-[var(--primary)] mb-4">Legal</p>
       <h1 className="text-4xl font-extrabold text-[var(--foreground)] mb-2">Terms of Service</h1>
       <p className="text-sm text-[var(--muted-foreground)] mb-12">Last updated: {LAST_UPDATED}</p>
 

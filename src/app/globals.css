@@ -71,6 +71,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-feature-settings: "rlig" 1, "calt" 1;
+  overflow-x: hidden;
 }
 
 ::selection {
@@ -80,6 +81,7 @@ body {
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 /* ── Subtle fade-in for scroll reveals ─────────────────────────────────────── */

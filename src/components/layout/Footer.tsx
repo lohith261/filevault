@@ -33,7 +33,7 @@ export function Footer() {
               <nav className="flex flex-col gap-2 text-sm text-[var(--muted-foreground)]">
                 <Link href="/help" className="hover:text-[var(--brand)] transition-colors">API Reference</Link>
                 <Link href="/help" className="hover:text-[var(--brand)] transition-colors">TypeScript SDK</Link>
-                <Link href="/help" className="hover:text-[var(--brand)] transition-colors">Python SDK</Link>
+                <a href="mailto:support@filevault.host" className="hover:text-[var(--brand)] transition-colors">Contact</a>
               </nav>
             </div>
             <div>
