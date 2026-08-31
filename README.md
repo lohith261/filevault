@@ -116,30 +116,7 @@ for await (const f of fv.files.iter()) {
 
 ### Python
 
-```python
-from filevault import FileVault
-
-fv = FileVault("fv_sk_...")
-
-# Upload and index
-with open("report.pdf", "rb") as f:
-    file = fv.files.upload(f, name="report.pdf", index=True)
-
-# Semantic search
-results = fv.search("What is the refund policy?")
-for r in results:
-    print(f"{r.score:.2f}  {r.content[:80]}")
-
-# Persistent memory
-fv.memory.add("User prefers metric units", ttl_seconds=86400 * 30)
-
-# Delete a memory
-fv.memory.delete(memory_id)
-
-# Iterate all files
-for f in fv.files.iter():
-    print(f.name)
-```
+> **Coming soon.** A Python SDK is on the roadmap. In the meantime use the REST API directly (curl examples above work as-is).
 
 ---
 
@@ -147,19 +124,23 @@ for f in fv.files.iter():
 
 FileVault exposes an MCP server so any compatible client can use it without writing code.
 
-**Claude Desktop config (`~/.claude/claude_desktop_config.json`):**
+The MCP server ships inside the repo. Clone the repo locally, then add this to your client config:
+
+**Claude Desktop (`~/.claude/claude_desktop_config.json`):**
 
 ```json
 {
   "mcpServers": {
     "filevault": {
       "command": "npx",
-      "args": ["-y", "tsx", "src/mcp/server.ts"],
+      "args": ["tsx", "/path/to/filevault/src/mcp/server.ts"],
       "env": { "FILEVAULT_API_KEY": "fv_sk_..." }
     }
   }
 }
 ```
+
+Replace `/path/to/filevault` with your local clone path. `tsx` must be available (`npm install -g tsx`).
 
 | Tool | Description |
 |---|---|
@@ -203,6 +184,12 @@ FileVault exposes an MCP server so any compatible client can use it without writ
 
 Every endpoint requires `Authorization: Bearer fv_sk_<64 hex chars>`.
 
+### Agent Identity
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/v1/agents/me` | Current agent's `id`, `name`, `created_at` |
+
 ### Files
 
 | Method | Path | Description |
@@ -214,7 +201,7 @@ Every endpoint requires `Authorization: Bearer fv_sk_<64 hex chars>`.
 | `DELETE` | `/v1/files/:id` | Delete file + embeddings |
 | `POST` | `/v1/files/:id/index` | Queue indexing on demand |
 
-**`index_status` lifecycle:** `idle` → `pending` → `indexing` → `indexed` / `failed`
+**`index_status` lifecycle:** `not_indexed` → `pending` → `indexed`
 
 ### Search
 
@@ -282,19 +269,14 @@ POST /v1/search
 
 ---
 
-## Usage Caps (Free tier)
+## Usage Caps
 
 | Resource | Limit |
 |---|---|
-| Files | 1,000 |
-| Total storage | 1 GB |
-| Embedding chunks | 50,000 |
-| Active memories | 5,000 |
-| State checkpoints | 1,000 |
-| Max file size | 50 MB |
-| Batch size | 10 files |
+| Upload rate | 20 files / minute per agent |
+| Batch size | 10 files per request |
 
-All limits return `429` with a descriptive `error` field.
+Per-agent storage quotas (files, embeddings, memory) are not enforced at this time. The rate limiter returns `429` with a `retry_after_seconds` field.
 
 ---
 
@@ -304,12 +286,15 @@ Agents build things for humans — dashboards, reports, static sites. FileVault 
 
 Drop a ZIP or HTML file on the homepage, get a shareable URL in seconds.
 
-| Feature | Anonymous | Free |
-|---|:---:|:---:|
-| Upload ZIP or HTML | ✓ | ✓ |
-| Max upload size | 5 MB | 10 MB |
-| Link expiry | 24 h | 30 days |
-| Custom subdomain | — | ✓ |
+| Feature | Anonymous | Free | Pro |
+|---|:---:|:---:|:---:|
+| Upload ZIP or HTML | ✓ | ✓ | ✓ |
+| Max upload size | 5 MB | 10 MB | 100 MB |
+| Link expiry | 24 h | 30 days | Never |
+| Max links | 3 / day | 10 total | Unlimited |
+| Subdomain (`slug.filevault.host`) | ✓ | ✓ | ✓ |
+| Password protection | — | ✓ | ✓ |
+| Custom domain (CNAME) | — | — | ✓ |
 
 ---
 
