@@ -15,29 +15,28 @@ export interface AgentFileRecord {
   created_at: string
 }
 
-function agentFetch(url: string, key: string) {
-  return fetch(url, { headers: { Authorization: `Bearer ${key}` } }).then((r) => {
+function dashFetch(url: string) {
+  return fetch(url, { credentials: 'include' }).then((r) => {
     if (!r.ok) throw new Error('Request failed')
     return r.json()
   })
 }
 
-export function useAgentFiles(apiKey: string | null) {
+export function useAgentFiles(agentId: string | null) {
+  const base = agentId ? `/api/dashboard/agents/${agentId}` : null
+
   const { data, isLoading, error, mutate } = useSWR(
-    apiKey ? ['/api/v1/files?limit=100', apiKey] : null,
-    ([url, key]: [string, string]) => agentFetch(url, key),
+    base ? `${base}/files?limit=100` : null,
+    dashFetch,
     { refreshInterval: 0 }
   )
 
   const deleteFile = useCallback(
     async (fileId: string) => {
-      if (!apiKey) return
+      if (!base) return
       await mutate(
         async (current: { files: AgentFileRecord[] } | undefined) => {
-          const res = await fetch(`/api/v1/files/${fileId}`, {
-            method: 'DELETE',
-            headers: { Authorization: `Bearer ${apiKey}` },
-          })
+          const res = await fetch(`${base}/files/${fileId}`, { method: 'DELETE', credentials: 'include' })
           if (!res.ok) throw new Error('Delete failed')
           if (!current) return current
           return { ...current, files: current.files.filter((f) => f.file_id !== fileId) }
@@ -45,37 +44,30 @@ export function useAgentFiles(apiKey: string | null) {
         { revalidate: true }
       )
     },
-    [apiKey, mutate]
+    [base, mutate]
   )
 
   const indexFile = useCallback(
-    async (fileId: string): Promise<{ chunks_created: number }> => {
-      if (!apiKey) throw new Error('No API key')
-      const res = await fetch(`/api/v1/files/${fileId}/index`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${apiKey}` },
-      })
+    async (fileId: string): Promise<{ chunks_created?: number; status?: string }> => {
+      if (!base) throw new Error('No agent selected')
+      const res = await fetch(`${base}/files/${fileId}`, { method: 'POST', credentials: 'include' })
       if (!res.ok) throw new Error('Indexing failed')
       const result = await res.json()
       await mutate()
       return result
     },
-    [apiKey, mutate]
+    [base, mutate]
   )
 
   const uploadFile = useCallback(
     async (file: File, shouldIndex: boolean, metadata: Record<string, unknown> | null) => {
-      if (!apiKey) throw new Error('No API key')
+      if (!base) throw new Error('No agent selected')
       const form = new FormData()
       form.append('file', file)
       form.append('index', String(shouldIndex))
       if (metadata) form.append('metadata', JSON.stringify(metadata))
 
-      const res = await fetch('/api/v1/files', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${apiKey}` },
-        body: form,
-      })
+      const res = await fetch(`${base}/files`, { method: 'POST', credentials: 'include', body: form })
       if (!res.ok) {
         const err = await res.json()
         throw new Error(err.error ?? 'Upload failed')
@@ -83,7 +75,7 @@ export function useAgentFiles(apiKey: string | null) {
       await mutate()
       return res.json()
     },
-    [apiKey, mutate]
+    [base, mutate]
   )
 
   return {

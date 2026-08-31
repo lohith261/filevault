@@ -73,6 +73,7 @@ model Agent {
   id              String        @id @default(cuid())
   name            String?
   apiKeyHash      String        @unique
+  userId          String?
   webhookUrl      String?
   createdAt       DateTime      @default(now())
   files           AgentFile[]
@@ -83,6 +84,7 @@ model Agent {
   sharesReceived  AgentShare[]  @relation("SharesReceived")
   states          AgentState[]
 
+  @@index([userId])
   @@map("agents")
 }
 

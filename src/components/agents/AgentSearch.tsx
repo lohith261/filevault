@@ -16,12 +16,12 @@ interface SearchResult {
 }
 
 interface AgentSearchProps {
-  apiKey: string
+  agentId: string
 }
 
 type FilterType = 'all' | 'files' | 'memory'
 
-export function AgentSearch({ apiKey }: AgentSearchProps) {
+export function AgentSearch({ agentId }: AgentSearchProps) {
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<FilterType>('all')
   const [results, setResults] = useState<SearchResult[]>([])
@@ -34,9 +34,10 @@ export function AgentSearch({ apiKey }: AgentSearchProps) {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch('/api/v1/search', {
+      const res = await fetch(`/api/dashboard/agents/${agentId}/search`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: query.trim(), filter: { type: filter }, limit: 10 }),
       })
       if (!res.ok) throw new Error('Search failed')

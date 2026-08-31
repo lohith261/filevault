@@ -1,31 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { AgentSetup } from '@/components/agents/AgentSetup'
+import { useAuth, SignInButton } from '@clerk/nextjs'
 import { AgentDashboard } from '@/components/agents/AgentDashboard'
 import { Button } from '@/components/ui/Button'
-
-const STORAGE_KEY = 'fv_agent_key'
-const COOKIE_DOMAIN = '.filevault.host'
-const COOKIE_MAX_AGE = 365 * 24 * 60 * 60 // 1 year
-
-function readKey(): string | null {
-  if (typeof document === 'undefined') return null
-  // Cookie (shared across subdomains) takes priority; fall back to legacy localStorage
-  const cookie = document.cookie.split('; ').find(r => r.startsWith(`${STORAGE_KEY}=`))
-  if (cookie) return decodeURIComponent(cookie.split('=')[1])
-  return localStorage.getItem(STORAGE_KEY)
-}
-
-function writeKey(key: string) {
-  localStorage.setItem(STORAGE_KEY, key)
-  document.cookie = `${STORAGE_KEY}=${encodeURIComponent(key)}; domain=${COOKIE_DOMAIN}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax; Secure`
-}
-
-function clearKey() {
-  localStorage.removeItem(STORAGE_KEY)
-  document.cookie = `${STORAGE_KEY}=; domain=${COOKIE_DOMAIN}; path=/; max-age=0`
-}
 
 const FEATURES = [
   {
@@ -102,50 +79,14 @@ curl -X POST https://filevault.host/api/v1/search \\
   -d '{"query": "What was the Q3 revenue?"}'`
 
 export default function AgentsPage() {
-  const [apiKey, setApiKey] = useState<string | null>(null)
-  const [ready, setReady] = useState(false)
-  const [showSetup, setShowSetup] = useState(false)
+  const { isSignedIn, userId } = useAuth()
 
-  useEffect(() => {
-    setApiKey(readKey())
-    setReady(true)
-  }, [])
-
-  function handleKeyReady(key: string) {
-    writeKey(key)
-    window.location.href = 'https://dashboard.filevault.host'
+  // Signed-in users go straight to the dashboard
+  if (isSignedIn && userId) {
+    return <AgentDashboard userId={userId} />
   }
 
-  function handleForget() {
-    clearKey()
-    setApiKey(null)
-  }
-
-  if (!ready) return null
-
-  // Already have a key — go straight to dashboard
-  if (apiKey) {
-    return <AgentDashboard apiKey={apiKey} onForget={handleForget} />
-  }
-
-  // Setup modal overlay
-  if (showSetup) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-        <div className="w-full max-w-lg">
-          <AgentSetup onKeyReady={handleKeyReady} />
-          <button
-            onClick={() => setShowSetup(false)}
-            className="mt-4 w-full text-center text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
-          >
-            ← Back
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  // Marketing landing
+  // Marketing landing for unauthenticated visitors
   return (
     <div className="mx-auto max-w-5xl px-6 pt-28 pb-24">
       {/* Hero */}
@@ -158,9 +99,11 @@ export default function AgentsPage() {
           One API key. Files, semantic search, persistent memory, and cross-agent sharing — no stitching required.
         </p>
         <div className="mt-8 flex items-center justify-center gap-3 flex-wrap">
-          <Button onClick={() => setShowSetup(true)} className="px-6 py-2.5 text-sm">
-            Get an API key →
-          </Button>
+          <SignInButton mode="modal">
+            <Button className="px-6 py-2.5 text-sm">
+              Get started →
+            </Button>
+          </SignInButton>
           <a
             href="/help"
             className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-5 py-2.5 text-sm font-medium text-[var(--muted-foreground)] transition-colors hover:border-[var(--brand)] hover:text-[var(--foreground)]"
@@ -169,7 +112,7 @@ export default function AgentsPage() {
           </a>
         </div>
         <p className="mt-4 text-xs text-[var(--muted-foreground)]">
-          No account needed · API key shown once
+          Free to start · No credit card required
         </p>
       </div>
 
@@ -191,7 +134,7 @@ export default function AgentsPage() {
           {FEATURES.map((f) => (
             <div
               key={f.title}
-              className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 hover:border-[var(--primary)]/40 hover:shadow-md hover:shadow-black/[0.06] transition-all"
+              className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 hover:border-[var(--brand)]/40 hover:shadow-md hover:shadow-black/[0.06] transition-all"
             >
               <div className="mb-3 text-[var(--brand)]">{f.icon}</div>
               <p className="text-sm font-semibold text-[var(--foreground)] mb-1">{f.title}</p>
@@ -205,12 +148,13 @@ export default function AgentsPage() {
       <div className="rounded-2xl border border-[var(--brand)]/20 bg-[var(--brand)]/5 p-10 text-center">
         <h2 className="text-2xl font-bold text-[var(--foreground)] mb-2">Ready to build?</h2>
         <p className="text-sm text-[var(--muted-foreground)] mb-6 max-w-md mx-auto">
-          Create an agent, get your API key, and make your first upload in under 2 minutes.
-          Already have a key? Enter it to access your dashboard.
+          Sign in to create an agent, upload files, and start searching in under 2 minutes.
         </p>
-        <Button onClick={() => setShowSetup(true)} className="px-8 py-2.5">
-          Get started →
-        </Button>
+        <SignInButton mode="modal">
+          <Button className="px-8 py-2.5">
+            Sign in to get started →
+          </Button>
+        </SignInButton>
       </div>
     </div>
   )

@@ -49,7 +49,7 @@ export function Navbar() {
 
         {/* Right: auth + CTA + hamburger */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {!onAgentsDashboard && (
+          {!onAgentsDashboard && !isSignedIn && (
             <Link href="/agents">
               <Button size="sm" className="bg-[var(--brand)] text-[var(--brand-foreground)] hover:bg-[var(--brand-hover)] text-xs">
                 Get API Key

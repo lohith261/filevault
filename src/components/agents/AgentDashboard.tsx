@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { formatBytes } from '@/lib/utils'
 import { useAgentFiles } from '@/hooks/useAgentFiles'
@@ -13,9 +13,14 @@ import { Spinner } from '@/components/ui/Spinner'
 
 type Tab = 'files' | 'search' | 'memory'
 
+interface AgentRecord {
+  id: string
+  name: string | null
+  created_at: string
+}
+
 interface AgentDashboardProps {
-  apiKey: string
-  onForget: () => void
+  userId: string
 }
 
 const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode }[] = [
@@ -48,29 +53,102 @@ const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   },
 ]
 
-export function AgentDashboard({ apiKey, onForget }: AgentDashboardProps) {
+const PREF_KEY = 'fv_selected_agent'
+
+export function AgentDashboard({ userId: _userId }: AgentDashboardProps) {
+  const [agents, setAgents] = useState<AgentRecord[]>([])
+  const [loadingAgents, setLoadingAgents] = useState(true)
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>('files')
   const [fileSearch, setFileSearch] = useState('')
   const [showUpload, setShowUpload] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [showCreate, setShowCreate] = useState(false)
+  const [newKey, setNewKey] = useState<string | null>(null)
 
-  const { files, isLoading, deleteFile, indexFile, uploadFile } = useAgentFiles(apiKey)
+  const { files, isLoading, deleteFile, indexFile, uploadFile } = useAgentFiles(selectedAgentId)
 
-  const maskedKey = `fv_sk_…${apiKey.slice(-6)}`
+  // Load agent list on mount
+  useEffect(() => {
+    fetch('/api/dashboard/agents', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((data: { agents: AgentRecord[] }) => {
+        setAgents(data.agents ?? [])
+        // Restore last-used agent or pick the first
+        const saved = typeof localStorage !== 'undefined' ? localStorage.getItem(PREF_KEY) : null
+        const preferred = saved && data.agents.find((a) => a.id === saved)
+        setSelectedAgentId(preferred ? preferred.id : (data.agents[0]?.id ?? null))
+      })
+      .catch(() => {})
+      .finally(() => setLoadingAgents(false))
+  }, [])
 
+  function selectAgent(id: string) {
+    setSelectedAgentId(id)
+    setTab('files')
+    setSidebarOpen(false)
+    try { localStorage.setItem(PREF_KEY, id) } catch { /* no-op */ }
+  }
+
+  async function handleCreate(name: string) {
+    const res = await fetch('/api/dashboard/agents', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name || undefined }),
+    })
+    if (!res.ok) throw new Error('Failed to create agent')
+    const data = await res.json()
+    const newAgent: AgentRecord = { id: data.agent_id, name: data.name, created_at: new Date().toISOString() }
+    setAgents((prev) => [newAgent, ...prev])
+    selectAgent(newAgent.id)
+    setNewKey(data.api_key)
+    setShowCreate(false)
+  }
+
+  const selectedAgent = agents.find((a) => a.id === selectedAgentId)
   const filtered = fileSearch
     ? files.filter((f) => f.name.toLowerCase().includes(fileSearch.toLowerCase()))
     : files
-
   const indexedCount = files.filter((f) => f.is_indexed).length
   const totalBytes = files.reduce((s, f) => s + f.size_bytes, 0)
 
   const Sidebar = () => (
     <aside className="flex flex-col h-full">
-      {/* Agent identity */}
-      <div className="px-4 py-3 border-b border-[var(--border)]">
-        <p className="text-[10px] text-[var(--muted-foreground)] mb-0.5">Active agent</p>
-        <p className="font-mono text-[11px] text-[var(--foreground)] truncate">{maskedKey}</p>
+      {/* Agent picker */}
+      <div className="px-3 py-3 border-b border-[var(--border)]">
+        <p className="text-[10px] text-[var(--muted-foreground)] mb-1.5 px-1">Agents</p>
+        <div className="space-y-0.5 max-h-40 overflow-y-auto">
+          {loadingAgents ? (
+            <div className="flex justify-center py-3"><Spinner size="sm" /></div>
+          ) : agents.length === 0 ? (
+            <p className="text-[11px] text-[var(--muted-foreground)] px-1 py-1">No agents yet.</p>
+          ) : agents.map((a) => (
+            <button
+              key={a.id}
+              onClick={() => selectAgent(a.id)}
+              className={`flex w-full items-center gap-2 px-2 py-1.5 rounded-md text-left transition-colors ${
+                a.id === selectedAgentId
+                  ? 'bg-[var(--brand)]/10 text-[var(--brand)]'
+                  : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]'
+              }`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${a.id === selectedAgentId ? 'bg-[var(--brand)]' : 'bg-[var(--border)]'}`} />
+              <span className="text-[11.5px] font-medium truncate">
+                {a.name ?? `agent-${a.id.slice(0, 6)}`}
+              </span>
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={() => { setShowCreate(true); setSidebarOpen(false) }}
+          className="mt-2 w-full flex items-center gap-1.5 px-2 py-1.5 text-[11px] text-[var(--muted-foreground)] hover:text-[var(--brand)] rounded-md hover:bg-[var(--brand)]/5 transition-colors"
+        >
+          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          New agent
+        </button>
       </div>
 
       {/* Navigation */}
@@ -92,16 +170,6 @@ export function AgentDashboard({ apiKey, onForget }: AgentDashboardProps) {
           </button>
         ))}
       </nav>
-
-      {/* Footer */}
-      <div className="px-4 py-3 border-t border-[var(--border)]">
-        <button
-          onClick={onForget}
-          className="text-[11px] text-[var(--muted-foreground)] hover:text-[var(--destructive)] transition-colors"
-        >
-          Switch agent
-        </button>
-      </div>
     </aside>
   )
 
@@ -135,11 +203,30 @@ export function AgentDashboard({ apiKey, onForget }: AgentDashboardProps) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
             </svg>
           </button>
-          <span className="text-sm font-medium text-[var(--foreground)] capitalize">{tab}</span>
+          <span className="text-sm font-medium text-[var(--foreground)] capitalize">
+            {selectedAgent?.name ?? tab}
+          </span>
         </div>
 
+        {/* No agents yet */}
+        {!loadingAgents && agents.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-full py-20 text-center px-6">
+            <svg className="h-8 w-8 text-[var(--muted-foreground)] mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+            </svg>
+            <p className="text-sm font-medium text-[var(--foreground)]">No agents yet</p>
+            <p className="mt-1 text-xs text-[var(--muted-foreground)]">Create your first agent to get started.</p>
+            <button
+              onClick={() => setShowCreate(true)}
+              className="mt-4 text-xs text-[var(--brand)] hover:underline underline-offset-2"
+            >
+              Create an agent →
+            </button>
+          </div>
+        )}
+
         <AnimatePresence mode="wait">
-          {tab === 'files' && (
+          {selectedAgentId && tab === 'files' && (
             <motion.div
               key="files"
               initial={{ opacity: 0 }}
@@ -227,7 +314,7 @@ export function AgentDashboard({ apiKey, onForget }: AgentDashboardProps) {
             </motion.div>
           )}
 
-          {tab === 'search' && (
+          {selectedAgentId && tab === 'search' && (
             <motion.div
               key="search"
               initial={{ opacity: 0 }}
@@ -240,11 +327,11 @@ export function AgentDashboard({ apiKey, onForget }: AgentDashboardProps) {
                 <h1 className="text-base font-semibold text-[var(--foreground)]">Semantic Search</h1>
                 <p className="text-xs text-[var(--muted-foreground)]">Search across all indexed files and memories</p>
               </div>
-              <AgentSearch apiKey={apiKey} />
+              <AgentSearch agentId={selectedAgentId} />
             </motion.div>
           )}
 
-          {tab === 'memory' && (
+          {selectedAgentId && tab === 'memory' && (
             <motion.div
               key="memory"
               initial={{ opacity: 0 }}
@@ -257,7 +344,7 @@ export function AgentDashboard({ apiKey, onForget }: AgentDashboardProps) {
                 <h1 className="text-base font-semibold text-[var(--foreground)]">Memory</h1>
                 <p className="text-xs text-[var(--muted-foreground)]">Persistent facts your agent can recall</p>
               </div>
-              <AgentMemory apiKey={apiKey} />
+              <AgentMemory agentId={selectedAgentId} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -269,7 +356,137 @@ export function AgentDashboard({ apiKey, onForget }: AgentDashboardProps) {
           <UploadModal onClose={() => setShowUpload(false)} onUpload={uploadFile} />
         )}
       </AnimatePresence>
+
+      {/* Create agent modal */}
+      <AnimatePresence>
+        {showCreate && (
+          <CreateAgentModal
+            onClose={() => setShowCreate(false)}
+            onCreate={handleCreate}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* New API key reveal */}
+      <AnimatePresence>
+        {newKey && (
+          <KeyRevealModal apiKey={newKey} onClose={() => setNewKey(null)} />
+        )}
+      </AnimatePresence>
     </div>
+  )
+}
+
+// ── Create Agent Modal ────────────────────────────────────────────────────────
+
+function CreateAgentModal({ onClose, onCreate }: { onClose: () => void; onCreate: (name: string) => Promise<void> }) {
+  const [name, setName] = useState('')
+  const [creating, setCreating] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleCreate() {
+    setCreating(true)
+    setError('')
+    try {
+      await onCreate(name)
+      onClose()
+    } catch {
+      setError('Failed to create agent. Please try again.')
+      setCreating(false)
+    }
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 16 }}
+        transition={{ duration: 0.18 }}
+        className="w-full max-w-sm rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-2xl shadow-black/40"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="text-sm font-semibold text-[var(--foreground)] mb-4">New agent</h2>
+        <Input
+          placeholder="Name (optional)"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+          className="mb-3 text-sm"
+          autoFocus
+        />
+        {error && <p className="mb-3 text-xs text-[var(--destructive)]">{error}</p>}
+        <div className="flex gap-2">
+          <Button variant="secondary" size="sm" className="flex-1" onClick={onClose} disabled={creating}>Cancel</Button>
+          <Button
+            size="sm"
+            className="flex-1 bg-[var(--brand)] text-[var(--brand-foreground)] hover:opacity-90"
+            onClick={handleCreate}
+            disabled={creating}
+          >
+            {creating ? <Spinner size="sm" /> : 'Create'}
+          </Button>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// ── Key Reveal Modal ──────────────────────────────────────────────────────────
+
+function KeyRevealModal({ apiKey, onClose }: { apiKey: string; onClose: () => void }) {
+  const [copied, setCopied] = useState(false)
+
+  function copy() {
+    navigator.clipboard.writeText(apiKey)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 16 }}
+        transition={{ duration: 0.18 }}
+        className="w-full max-w-sm rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-2xl shadow-black/40"
+      >
+        <div className="flex items-center gap-2 mb-1">
+          <span className="h-2 w-2 rounded-full bg-[var(--success)]" />
+          <h2 className="text-sm font-semibold text-[var(--foreground)]">Agent created</h2>
+        </div>
+        <p className="text-xs text-[var(--muted-foreground)] mb-3">
+          Copy your API key — it won&apos;t be shown again. Use it in your code to authenticate API calls.
+        </p>
+        <div className="mb-4 rounded-lg border border-[var(--border)] bg-[#0d0d12] px-3 py-2.5">
+          <p className="break-all font-mono text-xs text-[#a1a1aa]">{apiKey}</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="secondary" size="sm" className="flex-1" onClick={copy}>
+            {copied ? 'Copied ✓' : 'Copy key'}
+          </Button>
+          <Button
+            size="sm"
+            className="flex-1 bg-[var(--brand)] text-[var(--brand-foreground)] hover:opacity-90"
+            onClick={onClose}
+          >
+            Done
+          </Button>
+        </div>
+      </motion.div>
+    </motion.div>
   )
 }
 
@@ -290,11 +507,8 @@ function UploadModal({ onClose, onUpload }: UploadModalProps) {
 
   function parseMetadata(): Record<string, unknown> | null {
     if (!metaRaw.trim()) return null
-    try {
-      return JSON.parse(metaRaw)
-    } catch {
-      return null
-    }
+    try { return JSON.parse(metaRaw) }
+    catch { return null }
   }
 
   async function handleUpload() {
@@ -334,65 +548,37 @@ function UploadModal({ onClose, onUpload }: UploadModalProps) {
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-[var(--foreground)]">Upload file</h2>
-          <button
-            onClick={onClose}
-            className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors p-1 rounded-md hover:bg-[var(--muted)]"
-            aria-label="Close"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+          <button onClick={onClose} className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors p-1 rounded-md hover:bg-[var(--muted)]" aria-label="Close">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
-        {/* Dropzone */}
         <label className="mb-4 flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[var(--border)] bg-[var(--muted)] py-8 hover:border-[var(--brand)]/40 hover:bg-[var(--brand)]/[0.03] transition-colors">
           {file ? (
             <>
-              <svg className="h-5 w-5 text-[var(--brand)] mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5" />
-              </svg>
+              <svg className="h-5 w-5 text-[var(--brand)] mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5" /></svg>
               <p className="text-sm font-medium text-[var(--foreground)]">{file.name}</p>
               <p className="text-xs text-[var(--muted-foreground)] mt-0.5">{formatBytes(file.size)}</p>
             </>
           ) : (
             <>
-              <svg className="h-5 w-5 text-[var(--muted-foreground)] mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-              </svg>
+              <svg className="h-5 w-5 text-[var(--muted-foreground)] mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
               <p className="text-sm text-[var(--foreground)]">Click to select a file</p>
               <p className="text-xs text-[var(--muted-foreground)] mt-0.5">Max 50 MB</p>
             </>
           )}
-          <input
-            type="file"
-            className="hidden"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          />
+          <input type="file" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
         </label>
 
-        {/* Index toggle */}
         <label className="mb-4 flex cursor-pointer items-center gap-3">
-          <div
-            onClick={() => setShouldIndex(!shouldIndex)}
-            className={`relative h-4 w-8 rounded-full transition-colors ${
-              shouldIndex ? 'bg-[var(--brand)]' : 'bg-[var(--border)]'
-            }`}
-          >
-            <div
-              className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-transform ${
-                shouldIndex ? 'translate-x-4' : 'translate-x-0.5'
-              }`}
-            />
+          <div onClick={() => setShouldIndex(!shouldIndex)} className={`relative h-4 w-8 rounded-full transition-colors ${shouldIndex ? 'bg-[var(--brand)]' : 'bg-[var(--border)]'}`}>
+            <div className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-transform ${shouldIndex ? 'translate-x-4' : 'translate-x-0.5'}`} />
           </div>
           <span className="text-sm text-[var(--foreground)]">Index for semantic search</span>
         </label>
 
-        {/* Metadata */}
         <div className="mb-4">
-          <label className="mb-1.5 block text-xs text-[var(--muted-foreground)]">
-            Metadata <span className="font-mono">(JSON, optional)</span>
-          </label>
+          <label className="mb-1.5 block text-xs text-[var(--muted-foreground)]">Metadata <span className="font-mono">(JSON, optional)</span></label>
           <textarea
             className="w-full resize-none rounded-lg border border-[var(--border)] bg-[var(--muted)] px-3 py-2 font-mono text-xs text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--brand)]/30 focus:border-[var(--brand)]/30"
             rows={3}
@@ -404,26 +590,20 @@ function UploadModal({ onClose, onUpload }: UploadModalProps) {
 
         {error && (
           <div className="mb-3 flex items-start gap-2 rounded-lg bg-[var(--destructive)]/10 border border-[var(--destructive)]/20 px-3 py-2">
-            <svg className="h-3.5 w-3.5 text-[var(--destructive)] mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
-            </svg>
+            <svg className="h-3.5 w-3.5 text-[var(--destructive)] mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" /></svg>
             <p className="text-xs text-[var(--destructive)]">{error}</p>
           </div>
         )}
 
         {success && (
           <div className="mb-3 flex items-center gap-2 rounded-lg bg-[var(--success)]/10 border border-[var(--success)]/20 px-3 py-2">
-            <svg className="h-3.5 w-3.5 text-[var(--success)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
+            <svg className="h-3.5 w-3.5 text-[var(--success)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
             <p className="text-xs text-[var(--success)]">File uploaded successfully.</p>
           </div>
         )}
 
         <div className="flex gap-2">
-          <Button variant="secondary" size="sm" className="flex-1" onClick={onClose} disabled={uploading}>
-            Cancel
-          </Button>
+          <Button variant="secondary" size="sm" className="flex-1" onClick={onClose} disabled={uploading}>Cancel</Button>
           <Button
             size="sm"
             className="flex-1 bg-[var(--brand)] text-[var(--brand-foreground)] hover:bg-[var(--brand-hover)]"

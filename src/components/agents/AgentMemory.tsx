@@ -7,11 +7,11 @@ import { Spinner } from '@/components/ui/Spinner'
 import { useAgentMemory, type MemoryRecord } from '@/hooks/useAgentMemory'
 
 interface AgentMemoryProps {
-  apiKey: string
+  agentId: string
 }
 
-export function AgentMemory({ apiKey }: AgentMemoryProps) {
-  const { memories, isLoading, addMemory } = useAgentMemory(apiKey)
+export function AgentMemory({ agentId }: AgentMemoryProps) {
+  const { memories, isLoading, addMemory } = useAgentMemory(agentId)
   const [content, setContent] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')

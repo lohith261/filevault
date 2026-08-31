@@ -8,7 +8,7 @@ import type { AgentFileRecord } from '@/hooks/useAgentFiles'
 interface AgentFileRowProps {
   file: AgentFileRecord
   onDelete: (id: string) => Promise<void>
-  onIndex: (id: string) => Promise<{ chunks_created: number }>
+  onIndex: (id: string) => Promise<{ chunks_created?: number; status?: string }>
 }
 
 const STATUS_LABELS: Record<string, { text: string; color: string }> = {
@@ -58,7 +58,7 @@ export function AgentFileRow({ file, onDelete, onIndex }: AgentFileRowProps) {
     setIndexing(true)
     try {
       const result = await onIndex(file.file_id)
-      setChunks(result.chunks_created)
+      setChunks(result.chunks_created ?? 0)
     } finally {
       setIndexing(false)
     }
