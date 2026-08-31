@@ -1,12 +1,4 @@
 {
-  "redirects": [
-    {
-      "source": "/",
-      "has": [{ "type": "host", "value": "dashboard.filevault.host" }],
-      "destination": "/agents",
-      "permanent": false
-    }
-  ],
   "crons": [
     {
       "path": "/api/cron/cleanup",
