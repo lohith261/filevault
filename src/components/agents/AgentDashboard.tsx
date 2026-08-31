@@ -106,7 +106,7 @@ export function AgentDashboard({ apiKey, onForget }: AgentDashboardProps) {
   )
 
   return (
-    <div className="flex min-h-screen pt-16 bg-[var(--background)]">
+    <div className="flex h-screen overflow-hidden pt-16 bg-[var(--background)]">
       {/* Desktop sidebar */}
       <div className="hidden md:block fixed left-0 top-16 bottom-0 w-52 border-r border-[var(--border)] bg-[var(--card)] z-30">
         <Sidebar />
@@ -123,7 +123,7 @@ export function AgentDashboard({ apiKey, onForget }: AgentDashboardProps) {
       )}
 
       {/* Main content */}
-      <main className="md:ml-52 flex-1 min-w-0">
+      <main className="md:ml-52 flex-1 min-w-0 overflow-y-auto">
         {/* Mobile header bar */}
         <div className="md:hidden flex items-center gap-3 px-4 py-3 border-b border-[var(--border)]">
           <button
