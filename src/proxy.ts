@@ -57,6 +57,12 @@ export default async function handler(req: NextRequest) {
   // Rewrite subdomain requests to /s/[slug] before auth runs
   if (host.endsWith(`.${BASE_DOMAIN}`)) {
     const subdomain = host.slice(0, -(BASE_DOMAIN.length + 1))
+    // Special subdomains — rewrite to their canonical app path
+    if (subdomain === 'dashboard') {
+      const url = req.nextUrl.clone()
+      url.pathname = req.nextUrl.pathname === '/' ? '/agents' : req.nextUrl.pathname
+      return NextResponse.rewrite(url)
+    }
     if (subdomain && !RESERVED_SUBDOMAINS.has(subdomain)) {
       const url = req.nextUrl.clone()
       url.pathname = `/s/${subdomain}`
