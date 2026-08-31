@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { usePathname } from 'next/navigation'
 import { UserButton, SignInButton } from '@clerk/nextjs'
 import { Button } from '@/components/ui/Button'
 import { useSafeAuth } from '@/hooks/useSafeAuth'
@@ -18,6 +19,8 @@ const NAV_LINKS = [
 export function Navbar() {
   const { isSignedIn } = useSafeAuth()
   const [menuOpen, setMenuOpen] = useState(false)
+  const pathname = usePathname()
+  const onAgentsDashboard = pathname === '/agents'
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-[var(--border)] bg-[var(--background)]">
@@ -46,11 +49,13 @@ export function Navbar() {
 
         {/* Right: auth + CTA + hamburger */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <Link href="/agents">
-            <Button size="sm" className="bg-[var(--brand)] text-[var(--brand-foreground)] hover:bg-[var(--brand-hover)] text-xs">
-              Get API Key
-            </Button>
-          </Link>
+          {!onAgentsDashboard && (
+            <Link href="/agents">
+              <Button size="sm" className="bg-[var(--brand)] text-[var(--brand-foreground)] hover:bg-[var(--brand-hover)] text-xs">
+                Get API Key
+              </Button>
+            </Link>
+          )}
 
           {isSignedIn ? (
             <>
