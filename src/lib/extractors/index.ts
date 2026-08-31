@@ -61,10 +61,12 @@ function extractHtml(html: string): string {
 
 async function extractPdf(buffer: Buffer): Promise<string | null> {
   try {
-    // pdf-parse is optional; skip if unavailable
+    // Use the internal module directly to avoid pdf-parse loading its test PDF at import
+    // time, which throws ENOENT in Vercel serverless (no local filesystem access).
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const pdfParse = ((await import('pdf-parse')) as any).default ?? (await import('pdf-parse'))
-    const data = await pdfParse(buffer)
+    const pdfParse = (await import('pdf-parse/lib/pdf-parse.js')) as any
+    const fn = pdfParse.default ?? pdfParse
+    const data = await fn(buffer)
     return data.text?.trim() || null
   } catch {
     return null

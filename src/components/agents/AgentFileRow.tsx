@@ -125,13 +125,15 @@ export function AgentFileRow({ file, onDelete, onIndex }: AgentFileRowProps) {
           Open
         </a>
 
-        {file.index_status === 'not_indexed' && (
+        {(file.index_status === 'not_indexed' || file.index_status === 'failed') && (
           <button
             onClick={handleIndex}
             disabled={indexing}
-            className="text-[11px] font-mono text-[var(--brand)] hover:opacity-80 disabled:opacity-50 transition-opacity"
+            className={`text-[11px] font-mono hover:opacity-80 disabled:opacity-50 transition-opacity ${
+              file.index_status === 'failed' ? 'text-[var(--destructive)]' : 'text-[var(--brand)]'
+            }`}
           >
-            {indexing ? '…' : 'Index'}
+            {indexing ? '…' : file.index_status === 'failed' ? 'Retry' : 'Index'}
           </button>
         )}
 
