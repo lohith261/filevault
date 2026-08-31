@@ -174,7 +174,7 @@ export function AgentDashboard({ userId: _userId }: AgentDashboardProps) {
   )
 
   return (
-    <div className="flex h-screen overflow-hidden pt-16 bg-[var(--background)]">
+    <div className="dark-theme flex h-screen overflow-hidden pt-16 bg-[var(--background)]">
       {/* Desktop sidebar */}
       <div className="hidden md:block fixed left-0 top-16 bottom-0 w-52 border-r border-[var(--border)] bg-[var(--card)] z-30">
         <Sidebar />

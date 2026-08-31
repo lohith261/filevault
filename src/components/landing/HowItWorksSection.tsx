@@ -1,72 +1,52 @@
-// Server component — no framer-motion, no client JS needed.
-
 const STEPS = [
   {
-    num: '01',
-    title: 'Create your agent',
+    num: '1',
+    title: 'Create an agent',
     description:
-      'One POST request. Get an API key that starts with fv_sk_. Shown exactly once.',
-    code: 'POST /v1/agents',
+      'Sign up and create an agent profile. You get a single API key — that\'s all your AI needs to connect to FileVault.',
   },
   {
-    num: '02',
-    title: 'Store & index files',
+    num: '2',
+    title: 'Upload your files',
     description:
-      'Upload via multipart form. Text is extracted, chunked, and embedded in the background.',
-    code: 'POST /v1/files',
+      'Upload documents through the dashboard or directly through your AI. FileVault reads them and makes them searchable automatically.',
   },
   {
-    num: '03',
-    title: 'Search in natural language',
+    num: '3',
+    title: 'Your AI finds what it needs',
     description:
-      'Query across files and memory with pgvector-powered semantic search.',
-    code: 'POST /v1/search',
-  },
-  {
-    num: '04',
-    title: 'Share with other agents',
-    description:
-      'Grant read access to your embeddings. Other agents search your files without seeing your key.',
-    code: 'POST /v1/shares',
+      'When your AI needs information, it asks FileVault. It gets back the right answer instantly — no matter how many files you have.',
   },
 ]
 
 export function HowItWorksSection() {
   return (
-    <section className="py-20 px-6 border-t border-[var(--border)]">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-12 animate-fade-in-up">
-          <h2 className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] tracking-tight">
-            Up and running in four steps.
+    <section className="bg-[#f9f9f9] border-t border-b border-[#e8e8e8] px-6 py-24">
+      <div className="mx-auto max-w-5xl">
+        <div className="mb-14">
+          <span className="block text-[11px] font-medium tracking-[0.1em] uppercase text-[#888] mb-4">
+            How it works
+          </span>
+          <h2
+            className="text-[clamp(1.75rem,4vw,3rem)] leading-[1.1] tracking-[-0.025em] text-[#0a0a0a]"
+            style={{ fontFamily: 'var(--font-serif)' }}
+          >
+            Up and running<br />
+            in <em>minutes.</em>
           </h2>
         </div>
 
-        <div className="space-y-0">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-12">
           {STEPS.map((step) => (
-            <div
-              key={step.num}
-              className="grid grid-cols-12 gap-4 py-5 border-t border-[var(--border)] items-center"
-            >
-              <div className="col-span-1">
-                <span className="text-[11px] font-mono text-[var(--muted-foreground)]">
-                  {step.num}
-                </span>
-              </div>
-              <div className="col-span-11 sm:col-span-3 lg:col-span-2">
-                <h3 className="text-sm font-semibold text-[var(--foreground)]">
-                  {step.title}
-                </h3>
-              </div>
-              <div className="col-span-11 col-start-2 sm:col-span-6 sm:col-start-auto lg:col-span-7">
-                <p className="text-sm text-[var(--muted-foreground)] leading-relaxed">
-                  {step.description}
-                </p>
-              </div>
-              <div className="col-span-11 col-start-2 sm:col-span-2 sm:col-start-auto sm:text-right">
-                <code className="text-[11px] font-mono text-[var(--brand)]">
-                  {step.code}
-                </code>
-              </div>
+            <div key={step.num}>
+              <span
+                className="block text-[3rem] leading-none tracking-[-0.03em] text-[#e8e8e8] mb-5"
+                style={{ fontFamily: 'var(--font-serif)' }}
+              >
+                {step.num}
+              </span>
+              <h3 className="text-[15px] font-semibold text-[#0a0a0a] mb-2 tracking-[-0.01em]">{step.title}</h3>
+              <p className="text-[13.5px] text-[#888] leading-relaxed font-light">{step.description}</p>
             </div>
           ))}
         </div>

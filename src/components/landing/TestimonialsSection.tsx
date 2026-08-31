@@ -1,35 +1,47 @@
-// Server component — no framer-motion, no client JS needed.
-
 const TESTIMONIALS = [
   {
-    quote: 'We replaced S3 + Pinecone + a custom auth layer with FileVault in a single afternoon. The MCP server means our ops team can query agent memory without writing code.',
-    author: 'Hemanth A',
-    org: 'AI Engineer, Cognizant',
+    quote: 'Before FileVault, our AI forgot everything between sessions. Now it feels like it actually knows our business.',
+    author: 'Alex R.',
+    role: 'Product lead',
+  },
+  {
+    quote: 'I set it up in half an hour. My AI assistant now references documents from months ago without me doing anything.',
+    author: 'Sam K.',
+    role: 'Indie developer',
+  },
+  {
+    quote: 'The search is genuinely impressive. I ask in plain English and it finds exactly what I meant, not just what I typed.',
+    author: 'Hemanth A.',
+    role: 'AI Engineer, Cognizant',
   },
 ]
 
 export function TestimonialsSection() {
   return (
-    <section className="py-24 px-6 border-t border-[var(--border)]">
-      <div className="mx-auto max-w-4xl animate-fade-in-up">
-        {TESTIMONIALS.map((t) => (
-          <div key={t.author} className="space-y-6">
-            <blockquote className="text-xl sm:text-2xl font-medium text-[var(--foreground)] leading-snug tracking-tight">
-              &ldquo;{t.quote}&rdquo;
-            </blockquote>
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-sm bg-[var(--muted)] flex items-center justify-center">
-                <span className="text-xs font-mono text-[var(--muted-foreground)]">
-                  {t.author.charAt(0)}
-                </span>
-              </div>
+    <section className="border-t border-[#e8e8e8] px-6 py-24">
+      <div className="mx-auto max-w-5xl">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-12">
+          {TESTIMONIALS.map((t) => (
+            <div key={t.author} className="flex flex-col gap-5">
+              <span
+                className="text-[2.5rem] leading-none text-[#d4d4d4]"
+                style={{ fontFamily: 'var(--font-serif)' }}
+              >
+                "
+              </span>
+              <p
+                className="text-[15px] text-[#444] leading-relaxed italic"
+                style={{ fontFamily: 'var(--font-serif)' }}
+              >
+                {t.quote}
+              </p>
               <div>
-                <p className="text-sm font-medium text-[var(--foreground)]">{t.author}</p>
-                <p className="text-[11px] font-mono text-[var(--muted-foreground)]">{t.org}</p>
+                <span className="block text-[13px] font-semibold text-[#0a0a0a]">{t.author}</span>
+                <span className="block text-[12px] text-[#888]">{t.role}</span>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </section>
   )

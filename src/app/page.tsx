@@ -2,14 +2,11 @@ import { Suspense } from 'react'
 import { HeroSection } from '@/components/landing/HeroSection'
 import { FeaturesSection } from '@/components/landing/FeaturesSection'
 import { HowItWorksSection } from '@/components/landing/HowItWorksSection'
-import { ComparisonSection } from '@/components/landing/ComparisonSection'
 import { TestimonialsSection } from '@/components/landing/TestimonialsSection'
-import { SocialProofSection } from '@/components/landing/SocialProofSection'
+import { ComparisonSection } from '@/components/landing/ComparisonSection'
 
-// Shown while HeroSection awaits the cached DB count.
-// Cache TTL is 5 min so this skeleton only flashes on cold cache misses.
 function HeroSkeleton() {
-  return <div className="min-h-[90vh]" aria-hidden />
+  return <div className="min-h-[80vh]" aria-hidden />
 }
 
 export default function Home() {
@@ -18,11 +15,10 @@ export default function Home() {
       <Suspense fallback={<HeroSkeleton />}>
         <HeroSection />
       </Suspense>
-      <SocialProofSection />
       <FeaturesSection />
-      <ComparisonSection />
       <HowItWorksSection />
       <TestimonialsSection />
+      <ComparisonSection />
     </>
   )
 }
