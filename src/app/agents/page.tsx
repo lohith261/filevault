@@ -6,6 +6,26 @@ import { AgentDashboard } from '@/components/agents/AgentDashboard'
 import { Button } from '@/components/ui/Button'
 
 const STORAGE_KEY = 'fv_agent_key'
+const COOKIE_DOMAIN = '.filevault.host'
+const COOKIE_MAX_AGE = 365 * 24 * 60 * 60 // 1 year
+
+function readKey(): string | null {
+  if (typeof document === 'undefined') return null
+  // Cookie (shared across subdomains) takes priority; fall back to legacy localStorage
+  const cookie = document.cookie.split('; ').find(r => r.startsWith(`${STORAGE_KEY}=`))
+  if (cookie) return decodeURIComponent(cookie.split('=')[1])
+  return localStorage.getItem(STORAGE_KEY)
+}
+
+function writeKey(key: string) {
+  localStorage.setItem(STORAGE_KEY, key)
+  document.cookie = `${STORAGE_KEY}=${encodeURIComponent(key)}; domain=${COOKIE_DOMAIN}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax; Secure`
+}
+
+function clearKey() {
+  localStorage.removeItem(STORAGE_KEY)
+  document.cookie = `${STORAGE_KEY}=; domain=${COOKIE_DOMAIN}; path=/; max-age=0`
+}
 
 const FEATURES = [
   {
@@ -87,19 +107,18 @@ export default function AgentsPage() {
   const [showSetup, setShowSetup] = useState(false)
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    setApiKey(stored)
+    setApiKey(readKey())
     setReady(true)
   }, [])
 
   function handleKeyReady(key: string) {
-    localStorage.setItem(STORAGE_KEY, key)
+    writeKey(key)
     setApiKey(key)
     setShowSetup(false)
   }
 
   function handleForget() {
-    localStorage.removeItem(STORAGE_KEY)
+    clearKey()
     setApiKey(null)
   }
 
