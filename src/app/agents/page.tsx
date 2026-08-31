@@ -132,12 +132,9 @@ export default function AgentsPage() {
     <div className="mx-auto max-w-5xl px-6 pt-28 pb-24">
       {/* Hero */}
       <div className="text-center mb-16">
-        <p className="text-xs font-semibold uppercase tracking-widest text-[var(--primary)] mb-4">
-          Agent Storage API
-        </p>
         <h1 className="text-5xl sm:text-6xl font-extrabold tracking-tight leading-[1.05] text-[var(--foreground)]">
           Storage built for<br />
-          <span className="text-[var(--primary)]">AI agents.</span>
+          <span className="text-[var(--brand)]">AI agents.</span>
         </h1>
         <p className="mt-5 text-lg text-[var(--muted-foreground)] max-w-xl mx-auto">
           One API key. Files, semantic search, persistent memory, and cross-agent sharing — no stitching required.
@@ -148,7 +145,7 @@ export default function AgentsPage() {
           </Button>
           <a
             href="/help"
-            className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-5 py-2.5 text-sm font-medium text-[var(--muted-foreground)] transition-colors hover:border-[var(--primary)] hover:text-[var(--foreground)]"
+            className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-5 py-2.5 text-sm font-medium text-[var(--muted-foreground)] transition-colors hover:border-[var(--brand)] hover:text-[var(--foreground)]"
           >
             Read the docs
           </a>
@@ -159,14 +156,14 @@ export default function AgentsPage() {
       </div>
 
       {/* Code snippet */}
-      <div className="mb-16 rounded-xl border border-[var(--border)] bg-[var(--foreground)] overflow-hidden">
-        <div className="flex items-center gap-1.5 px-4 py-3 border-b border-white/10">
-          <span className="h-2.5 w-2.5 rounded-full bg-red-500/70" />
-          <span className="h-2.5 w-2.5 rounded-full bg-yellow-500/70" />
-          <span className="h-2.5 w-2.5 rounded-full bg-green-500/70" />
-          <span className="ml-2 text-xs text-white/40 font-mono">bash</span>
+      <div className="mb-16 rounded-xl border border-[var(--border)] bg-[#0d0d12] overflow-hidden shadow-xl shadow-black/30">
+        <div className="flex items-center gap-1.5 px-4 py-3 border-b border-white/[0.06] bg-white/[0.02]">
+          <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[#ffbd2e]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+          <span className="ml-2 text-xs text-[#4b5563] font-mono">bash</span>
         </div>
-        <pre className="px-5 py-4 text-xs font-mono text-white/80 overflow-x-auto leading-relaxed whitespace-pre">{CODE_SNIPPET}</pre>
+        <pre className="px-5 py-4 text-[12.5px] font-mono text-[#a1a1aa] overflow-x-auto leading-relaxed whitespace-pre">{CODE_SNIPPET}</pre>
       </div>
 
       {/* Feature grid */}
@@ -178,7 +175,7 @@ export default function AgentsPage() {
               key={f.title}
               className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 hover:border-[var(--primary)]/40 hover:shadow-md hover:shadow-black/[0.06] transition-all"
             >
-              <div className="mb-3 text-[var(--primary)]">{f.icon}</div>
+              <div className="mb-3 text-[var(--brand)]">{f.icon}</div>
               <p className="text-sm font-semibold text-[var(--foreground)] mb-1">{f.title}</p>
               <p className="text-xs text-[var(--muted-foreground)] leading-relaxed">{f.desc}</p>
             </div>
@@ -187,7 +184,7 @@ export default function AgentsPage() {
       </div>
 
       {/* CTA */}
-      <div className="rounded-2xl border border-[var(--primary)]/20 bg-[var(--primary)]/5 p-10 text-center">
+      <div className="rounded-2xl border border-[var(--brand)]/20 bg-[var(--brand)]/5 p-10 text-center">
         <h2 className="text-2xl font-bold text-[var(--foreground)] mb-2">Ready to build?</h2>
         <p className="text-sm text-[var(--muted-foreground)] mb-6 max-w-md mx-auto">
           Create an agent, get your API key, and make your first upload in under 2 minutes.

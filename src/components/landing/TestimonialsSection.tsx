@@ -12,10 +12,6 @@ export function TestimonialsSection() {
   return (
     <section className="py-24 px-6 border-t border-[var(--border)]">
       <div className="mx-auto max-w-4xl animate-fade-in-up">
-        <p className="text-[11px] font-mono uppercase tracking-[0.15em] text-[var(--muted-foreground)] mb-8">
-          Testimonials
-        </p>
-
         {TESTIMONIALS.map((t) => (
           <div key={t.author} className="space-y-6">
             <blockquote className="text-xl sm:text-2xl font-medium text-[var(--foreground)] leading-snug tracking-tight">

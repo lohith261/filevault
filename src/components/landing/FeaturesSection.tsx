@@ -80,7 +80,7 @@ export function FeaturesSection() {
                 </p>
               </div>
               <div className="col-span-11 col-start-2 sm:col-span-2 sm:col-start-auto sm:text-right">
-                <span className="text-[10px] font-mono text-[var(--muted-foreground)] uppercase tracking-wider">
+                <span className="text-[10px] font-mono text-[var(--muted-foreground)]">
                   {feature.tag}
                 </span>
               </div>

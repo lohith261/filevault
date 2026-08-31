@@ -1,6 +1,10 @@
-'use client'
-
+import type { Metadata } from 'next'
 import Link from 'next/link'
+
+export const metadata: Metadata = {
+  title: 'Pricing — FileVault',
+  description: 'FileVault is free to start. One API key, no credit card. Pro and Enterprise coming soon.',
+}
 
 function Check() {
   return (
@@ -57,7 +61,7 @@ const plans = [
     ],
     cta: 'Join waitlist',
     ctaHref: 'mailto:support@filevault.host?subject=Pro waitlist',
-    highlight: true,
+    highlight: false,
   },
   {
     name: 'Enterprise',
@@ -86,9 +90,6 @@ export default function PricingPage() {
     <div className="mx-auto max-w-5xl px-4 pt-28 pb-24">
       {/* Header */}
       <div className="mb-14 text-center">
-        <p className="text-[11px] font-mono uppercase tracking-[0.15em] text-[var(--muted-foreground)] mb-3">
-          Pricing
-        </p>
         <h1 className="text-4xl font-bold tracking-tight text-[var(--foreground)]">
           Storage infrastructure for AI agents
         </h1>

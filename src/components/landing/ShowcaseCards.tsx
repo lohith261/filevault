@@ -23,12 +23,10 @@ export function ShowcaseCards() {
     <section className="py-20 px-6 border-t border-[var(--border)]">
       <div className="mx-auto max-w-6xl">
         <div className="mb-10 animate-fade-in-up">
-          <p className="text-[11px] font-mono uppercase tracking-[0.15em] text-[var(--muted-foreground)] mb-3">
-            Use cases
-          </p>
-          <h2 className="text-3xl sm:text-4xl font-bold text-[var(--foreground)] tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] tracking-tight">
             Built for real agents.
           </h2>
+          <p className="mt-2 text-sm text-[var(--muted-foreground)]">Three patterns that ship in an afternoon.</p>
         </div>
 
         <div className="divide-y divide-[var(--border)] border-t border-[var(--border)]">
