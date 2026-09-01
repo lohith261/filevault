@@ -1,4 +1,11 @@
 {
+  "rewrites": [
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "dashboard.filevault.host" }],
+      "destination": "/dashboard-app"
+    }
+  ],
   "crons": [
     {
       "path": "/api/cron/cleanup",
