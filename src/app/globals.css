@@ -56,7 +56,10 @@
   --primary-foreground: #07070d;
   --secondary: rgba(255, 255, 255, 0.05);
   --secondary-foreground: #eeeef5;
-  --brand-muted: rgba(88, 101, 242, 0.12);
+  --brand: #ffffff;
+  --brand-hover: #e0e0e0;
+  --brand-foreground: #07070d;
+  --brand-muted: rgba(255, 255, 255, 0.08);
   background: var(--background);
   color: var(--foreground);
 }

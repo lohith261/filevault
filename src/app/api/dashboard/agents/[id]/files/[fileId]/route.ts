@@ -4,7 +4,8 @@ import { resolveUserAgent } from '@/lib/auth/dashboardAgent'
 import { storageDriver } from '@/lib/storage'
 import { fireWebhook } from '@/lib/webhook'
 import { runIndexingJob, streamToBuffer } from '@/lib/indexing'
-import { after } from 'next/server'
+
+export const maxDuration = 60
 
 type Params = { params: Promise<{ id: string; fileId: string }> }
 
@@ -37,8 +38,8 @@ export async function POST(req: NextRequest, { params }: Params) {
   const stream = await storageDriver.getFileStream(file.storageKey)
   const buffer = await streamToBuffer(stream)
 
-  await prisma.agentFile.update({ where: { id: fileId }, data: { indexStatus: 'pending' } })
-  after(async () => { await runIndexingJob(id, fileId, buffer, file.mimeType, file.name) })
+  await runIndexingJob(id, fileId, buffer, file.mimeType, file.name)
 
-  return NextResponse.json({ status: 'indexing' })
+  const updated = await prisma.agentFile.findFirst({ where: { id: fileId } })
+  return NextResponse.json({ status: updated?.indexStatus ?? 'unknown' })
 }
